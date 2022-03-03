@@ -4,41 +4,27 @@ library(DT)
 library(shinycssloaders)
 library(dplyr)
 library(bslib)
+library(pool)
 
-con <- function() {
-  DBI::dbConnect(
-    MariaDB(),
-    host = "david.prib.upf.edu",
-    user = "psebastian",
-    dbname = "biomarkers_2022",
-    port = 3306)
-}
+pool <- dbPool(
+  drv = MariaDB(),
+  host = "david.prib.upf.edu",
+  username = "psebastian",
+  dbname = "biomarkers_2022",
+  port = 3306
+)
+onStop(function() {
+  poolClose(pool)
+})
 
-loadData <- function(table) {
-  con <- con()
-  data <- tbl(con, table)
-  data <- as.data.frame(data)
-  dbDisconnect(con)
-  return(data)
-}
-
-gene_disease_loadData <- function(){
-  con <- con()
-  # Construct the fetching query
-  query <- "select gd.*, g.symbol, d.name
-            from gene_disease as gd
-            left join genes as g
-            on gd.geneid = g.geneid
-            left join diseases as d
-            on gd.diseaseid = d.diseaseid"
-  data <- dbGetQuery(con, query)
-  data <- as.data.frame(data)
-  dbDisconnect(con)
+loadData <- function(db, table) {
+  data <- tbl(db, table)
   return(data)
 }
 
 createLink_Button <- function(text){
-  sprintf('<button type="button">%s</button>', text)
+  paste0('<button type="button" style="width: 100%; display:block;"
+         class="btn btn-success action-button">', text, '</button>')
 }
 
 createLink_Symbol <- function(geneid, symbol){

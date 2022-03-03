@@ -1,0 +1,27 @@
+.disease {
+  background-color: #7774D1;
+  color: white;
+}
+
+.cdisease {
+  background-color: rgb(67, 69, 233);
+  color: white; 
+}
+
+.gene {
+  background-color: #FF8000;
+  color: white;
+}
+
+.navbar-nav > li > a.active {
+  background-color: #778899;
+}
+
+table.dataTable tr.active td, table.dataTable td.active {
+  background-color: #DAA520 !important;
+}
+
+#header_title {
+  color: #FFFFF0;
+  font-weight: bold;
+}
