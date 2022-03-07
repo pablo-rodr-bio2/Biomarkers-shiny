@@ -41,13 +41,15 @@ function(input, output, session) {
       "genes" = {
         dt$dt_genes <- pool %>%
         tbl("genes") %>% 
-        collect() 
+        collect() %>% 
+          mutate(Gene = createLink_Symbol(geneid, symbol))
         },
       
       "diseases" = {
         dt$dt_diseases <- pool %>% 
           tbl("diseases") %>% 
-          collect() 
+          collect() %>%
+          mutate( Condition = createLink_Name(diseaseid, name))
       },
       
       "studies" = {
@@ -60,7 +62,7 @@ function(input, output, session) {
         dt$dt_gds <- pool %>%
           tbl("gene_disease_summary") %>% 
           collect() %>% 
-          filter( if( !is.null(dt$Symbol) ) symbol == dt$Symbol else TRUE ) %>% 
+          filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>% 
           filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE )
         }, 
       
@@ -94,9 +96,8 @@ function(input, output, session) {
 
   
   output$genes <- DT::renderDataTable({
-    dt$dt_genes %>% 
-      mutate(symbol = createLink_Symbol(geneid, symbol)) %>%
-      rename( "Gene" = symbol, "type of gene" = type_of_gene,
+    dt$dt_genes %>%
+      rename( "type of gene" = type_of_gene,
               "protein class" = PROTEIN_CLASS_NAMES,
               "DPI" = dpi, "DSI" = dsi, "pLI"=pli,
               "year initial" = year_initial, "year final" = year_final, 
@@ -117,24 +118,23 @@ function(input, output, session) {
   
   geneProxy <- dataTableProxy('genes')
   
-  observeEvent(input$genes_cells_selected, {
-    value <- input$genes_cells_selected
+  observeEvent(req(input$genes_cells_selected), {
+    cell_clicked <- input$genes_cell_clicked
     geneProxy %>%  selectCells(NULL)
-    if(length(value > 1)) {
-      col <- value[,2]
-      if(col == "0"){
-        value[,2] <- value[,2] + 1
-        ## very awful but i refuse to convert tibble to data.frame just for this
-        dt$Symbol <- dt$dt_genes[value[,1], value[,2], drop = TRUE]
-        updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
-      }
+    if(cell_clicked$col == 0){
+      value <- cell_clicked$value
+      dt$Symbol <- dt$dt_genes %>% 
+        filter(Gene == value) %>% 
+        select(geneid) %>% 
+        as.character
+      str(dt$Symbol)
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
     }
   })
   
   output$diseases <- DT::renderDataTable({
-    dt$dt_diseases  %>%
-      mutate(  name = createLink_Name(diseaseid, name)) %>%
-      rename("Condition" = name, "Semantic Type" = sty, 
+    dt$dt_diseases %>%
+      rename("Semantic Type" = sty, 
              "Num. Biomarkers" = nbiomarkers, 
              "year initial" = year_initial, "year final" = year_final, 
              "Num. Clin.Trials" =  nclinicaltrials, 
@@ -152,16 +152,16 @@ function(input, output, session) {
   
   diseaseProxy <- dataTableProxy('diseases')
   
-  observeEvent(input$diseases_cells_selected, {
-    value <- input$diseases_cells_selected
+  observeEvent(req(input$diseases_cells_selected), {
+    cell_clicked <- input$diseases_cell_clicked
     diseaseProxy %>% selectCells(NULL)
-    if(length(value > 1)) {
-      col <- value[,2]
-      if(col == "0"){
-        value[,2] <- value[,2] + 1
-        dt$DiseaseId <- dt$dt_diseases[value[,1], value[,2], drop = TRUE]
-        updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
-      }
+    if(cell_clicked$col == 0){
+      value <- cell_clicked$value
+      dt$DiseaseId <- dt$dt_diseases %>% 
+        filter(Condition == value) %>% 
+        select(diseaseid) %>% 
+        as.character()
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
     }
   })
   
@@ -172,7 +172,8 @@ function(input, output, session) {
                 "Num. GDAS" = ngdas, "Num. Genes" = ngenes, "Num. Diseases" = ndiseases,
                 "Num Pmids" = npmids, "Study Type" = study_type       )  %>% 
       select("NCT ID" , "Brief Title",  "Official Title", "Study Type", "Official Title", 
-             "Num. GDAS", "Num. Genes", "Num. Diseases", "Num Pmids") %>%  arrange(desc(`Num. GDAS`) ) %>%
+             "Num. GDAS", "Num. Genes", "Num. Diseases", "Num Pmids") %>%
+      arrange(desc(`Num. GDAS`) ) %>%
       mutate(`NCT ID` = createLink_NCIT(`NCT ID`))
   }, filter = "top",
   options = list(scrollX = TRUE, dom = 'ltipr', pageLength = 10),

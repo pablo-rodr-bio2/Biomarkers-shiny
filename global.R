@@ -1,11 +1,13 @@
 library(shiny)
 library(RMariaDB)
 library(DT)
-library(shinycssloaders)
+library(shinycustomloader)
 library(dplyr)
 library(bslib)
 library(pool)
 library(kableExtra)
+
+
 pool <- dbPool(
   drv = MariaDB(),
   host = "localhost",
@@ -29,18 +31,18 @@ createLink_Button <- function(text){
 }
 
 createLink_Symbol <- function(geneid, symbol){
-  sprintf('<a href="https://www.ncbi.nlm.nih.gov/gene/%s" target="_blank">%s</a>',geneid, symbol)
+  sprintf("<a href='https://www.ncbi.nlm.nih.gov/gene/%s' target='_blank'>%s</a>",geneid, symbol)
 }
 
 createLink_Name <- function(diseaseid, name){
-  sprintf('<a href="https://meshb.nlm.nih.gov/record/ui?ui=%s" target="_blank">%s</a>',diseaseid, name)
+  sprintf("<a href='https://meshb.nlm.nih.gov/record/ui?ui=%s' target='_blank'>%s</a>",diseaseid, name)
 }
 
 
 createLink_NCIT <- function(nctid){
-  sprintf('<a href="https://clinicaltrials.gov/ct2/show/%s" target="_blank">%s</a>',nctid, nctid)
+  sprintf("<a href='https://clinicaltrials.gov/ct2/show/%s' target='_blank'>%s</a>",nctid, nctid)
 }
 
 createLink_PMID <- function(pmid){
-  sprintf('<a href=https://pubmed.ncbi.nlm.nih.gov/%s" target="_blank">%s</a>',pmid, pmid)
+  sprintf("<a href='https://pubmed.ncbi.nlm.nih.gov/%s' target='_blank'>%s</a>",pmid, pmid)
 }
