@@ -41,44 +41,19 @@ function(input, output, session) {
       "genes" = {
         dt$dt_genes <- pool %>%
         tbl("genes") %>% 
-        collect() %>% 
-          mutate(symbol = createLink_Symbol(geneid, symbol)) %>%
-          rename( "Gene" = symbol, "type of gene" = type_of_gene,
-                  "protein class" = PROTEIN_CLASS_NAMES,
-                 "DPI" = dpi, "DSI" = dsi, "pLI"=pli,
-                 "year initial" = year_initial, "year final" = year_final, 
-               "Num. Clin.Trials" =  nclinicaltrials, 
-               "Num. Diseases" = ndiseases, "Num. Pmids" = npmids)  %>% 
-          select(Gene, description, `type of gene`, DSI, DPI, pLI,`protein class`,
-                 `Num. Clin.Trials`, `Num. Diseases`, `Num. Pmids`,
-                 `year initial`, `year final`
-                 ) %>%  arrange(desc(`Num. Clin.Trials`) )
+        collect() 
         },
       
       "diseases" = {
         dt$dt_diseases <- pool %>% 
           tbl("diseases") %>% 
-          collect() %>% mutate(  name = createLink_Name(diseaseid, name)) %>%
-        rename("Condition" = name, "Semantic Type" = sty, 
-                               "Num. Biomarkers" = nbiomarkers, 
-                               "year initial" = year_initial, "year final" = year_final, 
-                               "Num. Clin.Trials" =  nclinicaltrials, 
-                               "Num. Pmids" = npmids) %>%
-        select(Condition, "Semantic Type",  "Num. Biomarkers" ,
-               `Num. Clin.Trials`,   `Num. Pmids`,
-               `year initial`, `year final`) %>%  arrange(desc(`Num. Clin.Trials`) )
+          collect() 
       },
       
       "studies" = {
         dt$dt_studies <- pool %>% 
           tbl("studies") %>% 
-          collect() %>% 
-          rename(   "NCT ID" = nctid, "Brief Title" = brief_title, 
-                    "Official Title" = official_title,  
-                    "Num. GDAS" = ngdas, "Num. Genes" = ngenes, "Num. Diseases" = ndiseases,
-                    "Num Pmids" = npmids, "Study Type" = study_type       )  %>% 
-          select("NCT ID" , "Brief Title",  "Official Title", "Study Type", "Official Title", 
-                 "Num. GDAS", "Num. Genes", "Num. Diseases", "Num Pmids") %>%  arrange(desc(`Num. GDAS`) )
+          collect() 
         },
       
       "gene_disease_summary" = {
@@ -86,17 +61,7 @@ function(input, output, session) {
           tbl("gene_disease_summary") %>% 
           collect() %>% 
           filter( if( !is.null(dt$Symbol) ) symbol == dt$Symbol else TRUE ) %>% 
-          filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE ) %>%
-          select(-geneid, -diseaseid, -id) %>% 
-          rename(            "Gene" = symbol, "Condition" = name,  
-                 "year initial" = year_initial, "year final" = year_final, 
-                 "Num. Clin.Trials" =  nclinicaltrials, 
-                  "Num. Pmids" = npmids)  %>% 
-          select(Gene, Condition, 
-                 `Num. Clin.Trials`,   `Num. Pmids`,
-                 `year initial`, `year final`
-          )%>%  arrange(desc(`Num. Clin.Trials`) )
-
+          filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE )
         }, 
       
       "gene_disease" = {
@@ -130,6 +95,17 @@ function(input, output, session) {
   
   output$genes <- DT::renderDataTable({
     dt$dt_genes %>% 
+      mutate(symbol = createLink_Symbol(geneid, symbol)) %>%
+      rename( "Gene" = symbol, "type of gene" = type_of_gene,
+              "protein class" = PROTEIN_CLASS_NAMES,
+              "DPI" = dpi, "DSI" = dsi, "pLI"=pli,
+              "year initial" = year_initial, "year final" = year_final, 
+              "Num. Clin.Trials" =  nclinicaltrials, 
+              "Num. Diseases" = ndiseases, "Num. Pmids" = npmids)  %>% 
+      select(Gene, description, `type of gene`, DSI, DPI, pLI,`protein class`,
+             `Num. Clin.Trials`, `Num. Diseases`, `Num. Pmids`,
+             `year initial`, `year final`
+      ) %>%  arrange(desc(`Num. Clin.Trials`) ) %>% 
       mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`))
     }, 
     filter = "top",
@@ -156,7 +132,16 @@ function(input, output, session) {
   })
   
   output$diseases <- DT::renderDataTable({
-    dt$dt_diseases %>% 
+    dt$dt_diseases  %>%
+      mutate(  name = createLink_Name(diseaseid, name)) %>%
+      rename("Condition" = name, "Semantic Type" = sty, 
+             "Num. Biomarkers" = nbiomarkers, 
+             "year initial" = year_initial, "year final" = year_final, 
+             "Num. Clin.Trials" =  nclinicaltrials, 
+             "Num. Pmids" = npmids) %>%
+      select(Condition, "Semantic Type",  "Num. Biomarkers" ,
+             `Num. Clin.Trials`,   `Num. Pmids`,
+             `year initial`, `year final`) %>%  arrange(desc(`Num. Clin.Trials`) ) %>% 
       mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`))
   },
   filter = "top",
@@ -181,7 +166,13 @@ function(input, output, session) {
   })
   
   output$studies <- DT::renderDataTable({
-    dt$dt_studies %>%
+    dt$dt_studies %>% 
+      rename(   "NCT ID" = nctid, "Brief Title" = brief_title, 
+                "Official Title" = official_title,  
+                "Num. GDAS" = ngdas, "Num. Genes" = ngenes, "Num. Diseases" = ndiseases,
+                "Num Pmids" = npmids, "Study Type" = study_type       )  %>% 
+      select("NCT ID" , "Brief Title",  "Official Title", "Study Type", "Official Title", 
+             "Num. GDAS", "Num. Genes", "Num. Diseases", "Num Pmids") %>%  arrange(desc(`Num. GDAS`) ) %>%
       mutate(`NCT ID` = createLink_NCIT(`NCT ID`))
   }, filter = "top",
   options = list(scrollX = TRUE, dom = 'ltipr', pageLength = 10),
@@ -191,8 +182,17 @@ function(input, output, session) {
 
 
   output$gene_disease_summary <- DT::renderDataTable({
-    dt$dt_gds %>%
-      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`))
+    dt$dt_gds  %>%
+      select(-geneid, -diseaseid, -id) %>% 
+      rename( "Gene" = symbol, "Condition" = name,  
+              "year initial" = year_initial, "year final" = year_final, 
+              "Num. Clin.Trials" =  nclinicaltrials, 
+              "Num. Pmids" = npmids)  %>% 
+      select(Gene, Condition, 
+             `Num. Clin.Trials`,   `Num. Pmids`,
+             `year initial`, `year final`) %>%
+      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`)) %>% 
+      arrange(desc(`Num. Clin.Trials`) )
   }, filter = "top",
   options = list(dom = 'ltipr'),
   selection = list(mode = 'single', target = 'cell'),
