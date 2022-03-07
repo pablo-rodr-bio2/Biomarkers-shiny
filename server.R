@@ -1,4 +1,14 @@
 function(input, output, session) {
+  
+  dt <- reactiveValues(dt_genes = NULL,
+                       dt_diseases = NULL,
+                       dt_studies = NULL,
+                       dt_gds = NULL,
+                       dt_gd = NULL,
+                       dt_publications = NULL,
+                       Symbol = NULL,
+                       GeneId = NULL,
+                       DiseaseId = NULL)
 
   observeEvent(input$header_title, {
     updateNavbarPage(inputId = "navbarPage", selected = "about")
@@ -24,16 +34,6 @@ function(input, output, session) {
       dbGetQuery(query) %>%
       collect()
   })
-  
-  
-  dt <- reactiveValues(dt_genes = NULL,
-                       dt_diseases = NULL,
-                       dt_studies = NULL,
-                       dt_gds = NULL,
-                       dt_gd = NULL,
-                       dt_publications = NULL,
-                       Symbol = NULL,
-                       DiseaseId = NULL)
   
   observe({
     
@@ -61,9 +61,7 @@ function(input, output, session) {
       "gene_disease_summary" = {
         dt$dt_gds <- pool %>%
           tbl("gene_disease_summary") %>% 
-          collect() %>% 
-          filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>% 
-          filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE )
+          collect() 
         }, 
       
       "gene_disease" = {
@@ -127,7 +125,6 @@ function(input, output, session) {
         filter(Gene == value) %>% 
         select(geneid) %>% 
         as.character
-      str(dt$Symbol)
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
     }
   })
@@ -181,9 +178,11 @@ function(input, output, session) {
   escape = FALSE,
   selection = list(mode = 'single', target = 'cell'))
 
-
-  output$gene_disease_summary <- DT::renderDataTable({
-    dt$dt_gds  %>%
+  ### use reactive in order to filter geneid and diseaseid for gene-disease table?
+  g_d_summary <- reactive({
+    dt$dt_gds %>% 
+      filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>% 
+      filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE ) %>%
       select(-geneid, -diseaseid, -id) %>% 
       rename( "Gene" = symbol, "Condition" = name,  
               "year initial" = year_initial, "year final" = year_final, 
@@ -193,24 +192,25 @@ function(input, output, session) {
              `Num. Clin.Trials`,   `Num. Pmids`,
              `year initial`, `year final`) %>%
       mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`)) %>% 
-      arrange(desc(`Num. Clin.Trials`) )
+      arrange(desc(`Num. Clin.Trials`) ) 
+  })
+  
+  output$gene_disease_summary <- DT::renderDataTable({
+    g_d_summary()
   }, filter = "top",
   options = list(dom = 'ltipr'),
   selection = list(mode = 'single', target = 'cell'),
   escape = FALSE,
   rownames = FALSE)
   
-  observeEvent(input$gene_disease_summary_cells_selected, {
-    value <- input$gene_disease_summary_cells_selected
-    if(length(value)>1) {
-      col <- value[,2]
-      if(col == "4"){
-        rows <- value[,1]
-        cols <- value[,2] + 1
-        dt$Symbol <- dt$dt_gds[rows,3, drop = TRUE]
-        dt$DiseaseId <- dt$dt_gds[rows, 2, drop = TRUE]
-        updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
-      }
+  observeEvent(req(input$gene_disease_summary_cells_selected), {
+    value <- input$gene_disease_summary_cell_clicked
+    col <- value$col
+    if(col == "2"){
+      str(input$gene_disease_summary_cells_selected)
+      # dt$Symbol <- dt$dt_gds[rows,3, drop = TRUE]
+      # dt$DiseaseId <- dt$dt_gds[rows, 2, drop = TRUE]
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
     }
   })
   

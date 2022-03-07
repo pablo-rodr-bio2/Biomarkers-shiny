@@ -20,10 +20,6 @@ onStop(function() {
   poolClose(pool)
 })
 
-loadData <- function(db, table) {
-  data <- tbl(db, table)
-  return(data)
-}
 
 createLink_Button <- function(text){
   paste0('<button type="button" style="width: 100%; display:block;"
