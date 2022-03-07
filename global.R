@@ -5,11 +5,12 @@ library(shinycssloaders)
 library(dplyr)
 library(bslib)
 library(pool)
-
+library(kableExtra)
 pool <- dbPool(
   drv = MariaDB(),
-  host = "david.prib.upf.edu",
+  host = "localhost",
   username = "psebastian",
+  password = "",
   dbname = "biomarkers_2022",
   port = 3306
 )
@@ -33,4 +34,13 @@ createLink_Symbol <- function(geneid, symbol){
 
 createLink_Name <- function(diseaseid, name){
   sprintf('<a href="https://meshb.nlm.nih.gov/record/ui?ui=%s" target="_blank">%s</a>',diseaseid, name)
+}
+
+
+createLink_NCIT <- function(nctid){
+  sprintf('<a href="https://clinicaltrials.gov/ct2/show/%s" target="_blank">%s</a>',nctid, nctid)
+}
+
+createLink_PMID <- function(pmid){
+  sprintf('<a href=https://pubmed.ncbi.nlm.nih.gov/%s" target="_blank">%s</a>',pmid, pmid)
 }
