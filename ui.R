@@ -6,17 +6,18 @@ navbarPage(
   theme = bs_theme(bootswatch = "yeti"),
   nav_spacer(),
   tabPanel("About", value = "about", includeMarkdown("about.rmd")),
-  tabPanel("Genes", value = "genes", withLoader(DT::dataTableOutput("genes"))),
-  tabPanel("Diseases", value = "diseases", withLoader(DTOutput("diseases"))),
-  tabPanel("Studies",  value = "studies", withLoader(DTOutput("studies" ))),
-  tabPanel("Gene-Disease Summary",  value = "gene_disease_summary",
+  tabPanel("Biomarkers", value = "genes", withLoader(DT::dataTableOutput("genes"))),
+  tabPanel("Conditions", value = "diseases", withLoader(DTOutput("diseases"))),
+  tabPanel("Summary",  value = "gene_disease_summary",
            actionButton("reload1", "Reload Data"),
            hr(),
            withLoader(DTOutput("gene_disease_summary"))),
-  tabPanel("Gene-Disease",  value = "gene_disease",
+  tabPanel("Measurements",  value = "gene_disease",
            actionButton("reload2", "Reload Data"),
            hr(),
            withLoader(DTOutput("gene_disease"))),
   tabPanel("Publications",  value = "publications", withLoader(DTOutput("publications"))),
   footer = textOutput("text")
 )
+
+#tabPanel("Studies",  value = "studies", withLoader(DTOutput("studies" ))),

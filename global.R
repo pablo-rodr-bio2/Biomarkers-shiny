@@ -10,7 +10,7 @@ library(kableExtra)
 
 pool <- dbPool(
   drv = MariaDB(),
-  host = "localhost",
+  host = "david.prib.upf.edu",
   username = "psebastian",
   password = "",
   dbname = "biomarkers_2022",
@@ -22,7 +22,7 @@ onStop(function() {
 
 
 createLink_Button <- function(text){
-  paste0('<button type="button" style="width: 100%; display:block;"
+  paste0('<button type="button" style="width: 70%; display:block;"
          class="btn btn-success action-button">', text, '</button>')
 }
 
