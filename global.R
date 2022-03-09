@@ -6,6 +6,7 @@ library(dplyr)
 library(bslib)
 library(pool)
 library(kableExtra)
+library(knitr)
 
 
 pool <- dbPool(
@@ -22,7 +23,7 @@ onStop(function() {
 
 
 createLink_Button <- function(text){
-  paste0('<button type="button" style="width: 70%; display:block;"
+  paste0('<button type="button" style="width: 70%;"
          class="btn btn-success action-button">', text, '</button>')
 }
 

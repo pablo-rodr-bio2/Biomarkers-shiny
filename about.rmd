@@ -1,26 +1,60 @@
 ---
-title: "Biomarkers in Clinical Trials "
+title: "Biomarkers in Clinical Trials"
 output: html_document
 ---
+
+```{r setup, include=FALSE, eval=T}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
 
 The numbers of clinical trials are now rising in an unprecedented manner. The data they contain can be exploited to extract information about what human diseases are investigated and which are molecular biomarkers used in this massive pool of studies. In this contribution, we have applied artificial intelligent technologies to explore protein and gene biomarkers more frequently assessed in Clinical Trials data. We found over 4,300 genes measured in over 55,000 Clinical Trials involving 3,000 diseases. 
 
 
 
-## intervention type
-```{r, echo=FALSE,  message=F, warning=F,out.width="90%",  fig.cap = 'Figure 4:  Phases of the CTs containing biomarkers.'}
-# library(webr)
-# library(ggplot2)
-# datos <- as.data.frame(table( studies$study_type))
-# colnames(datos) <- c("intervention", "count")
-# 
-# PieDonut(datos,aes(intervention,count=count),r0=0.4,r1=0.6,explode=c(2,3),start=3*pi/2, showRatioThreshold = 0, labelposition = 1,  showRatioPie =F)
-```
+## Intervention type
+
+
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, echo=FALSE,results='hide',fig.keep='all', message=FALSE, warning=FALSE}
+
+library(ggplot2)
+library(RMariaDB)
+library(dplyr)
+library(pool)
+
+pool <- dbPool(
+  drv = MariaDB(),
+  host = "david.prib.upf.edu",
+  username = "psebastian",
+  password = "",
+  dbname = "biomarkers_2022",
+  port = 3306
+)
+
+query <- "select gd.*, g.symbol, d.name
+            from gene_disease as gd
+            left join genes as g
+            on gd.geneid = g.geneid
+            left join diseases as d
+            on gd.diseaseid = d.diseaseid"
+dt_gd <- pool %>%
+  dbGetQuery(query) %>%
+  collect()
+
+poolClose(pool)
+
+data <- dt_gd %>% 
+  group_by(bmtype) %>% 
+  count(geneid) %>% 
+  summarise(
+    counts = sum(n)
+  )
+  
+ggplot(data, aes(factor(bmtype), counts, fill = bmtype)) +
+  geom_col()
 ```
 
 
