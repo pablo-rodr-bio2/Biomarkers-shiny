@@ -6,8 +6,7 @@ library(dplyr)
 library(bslib)
 library(pool)
 library(kableExtra)
-library(knitr)
-
+library(ggplot2)
 
 pool <- dbPool(
   drv = MariaDB(),
