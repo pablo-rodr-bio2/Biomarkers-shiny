@@ -374,11 +374,20 @@ function(input, output, session) {
     p <- ggplot(data, aes(`Biomarker Type`, percent, fill = factor(`Biomarker Type`))) +
       geom_col() + theme_bw() + xlab("Biomarker Type") +theme(legend.position="none")
     plotly::ggplotly(p, source="click1", tooltip = c("Biomarker Type", "percent")) %>%
-      event_register("plotly_click")
+      htmlwidgets::onRender(
+        "function(el, x) {
+         var gd = document.getElementById(el.id);
+         gd.on('plotly_selected', function(d) {
+            // beware, sometimes this event fires objects that can't be seralized
+            console.log(d);
+            Shiny.onInputChange('my-select-event', d.range)
+         })
+       }") %>% 
+      event_register("plotly_hover")
   })
   
   eventData <- reactive({
-    ind <- event_data("plotly_click", source = "click1")
+    ind <- event_data("plotly_hover", source = "click1")
     ind
   })
   
