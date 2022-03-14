@@ -12,6 +12,7 @@ function(input, output, session) {
                        dt_publications = NULL,
                        Symbol = NULL,
                        DiseaseId = NULL,
+                       Biomarker = NULL,
                        gd_symbol = NULL,
                        gd_name = NULL)
   
@@ -63,7 +64,8 @@ function(input, output, session) {
           dbGetQuery(query) %>%
           collect() %>% 
           filter( if( !is.null(dt$gd_symbol) ) symbol == dt$gd_symbol else TRUE ) %>%
-          filter( if( !is.null(dt$gd_name) ) name == dt$gd_name else TRUE )
+          filter( if( !is.null(dt$gd_name) ) name == dt$gd_name else TRUE ) %>% 
+          filter( if( !is.null(dt$Biomarker) ) bmtype == dt$Biomarker else TRUE )
       },
       
       "publications" = {
@@ -98,7 +100,7 @@ function(input, output, session) {
              `Num. Pmids` = createLink_Button(`Num. Pmids`))
     }, 
     filter = "top",
-    options = list(scrollX = TRUE, dom = 'ltipr', pageLength = 5,
+    options = list(scrollX = TRUE, dom = 'ltipr', pageLength = 10,
                    columnDefs = list(list(className = 'dt-center', targets ="_all"))),
     rownames = FALSE,
     escape = FALSE,
@@ -259,11 +261,59 @@ function(input, output, session) {
     value <- input$gene_disease_summary_cell_clicked
     gdsProxy %>% selectCells(NULL)
     col <- value$col
+    dt$gd_symbol <- input$gds_data[1]
+    dt$gd_name <- input$gds_data[2]
     if(col == "4"){
-      dt$gd_symbol <- input$gds_data[1]
-      dt$gd_name <- input$gds_data[2]
       updateNavbarPage( inputId = "navbarPage", selected = "gene_disease")
-    }
+    } 
+  })
+  
+  #### HEATMAP ####
+  output$heatmap_gds <- renderPlot({
+    
+    df <- dt$dt_gds %>%
+      filter(nclinicaltrials> 1) %>%
+      filter( if( !is.null(dt$gd_symbol) ) symbol == dt$gd_symbol else TRUE ) %>% 
+      arrange(desc(nclinicaltrials)) %>%
+      head(50)
+    
+    df <- df %>%
+      mutate(disease=factor(name, levels=rev(sort(unique(name))))) %>%
+      mutate(countfactor=cut(nclinicaltrials, breaks=c(  0, 1, 10, 100, 200,  max(nclinicaltrials, na.rm=T)),
+                             labels=c(  "0-1", "1-10", "10-100", "100-200", ">400"))) %>%
+      # change level order
+      mutate(countfactor=factor(as.character(countfactor), levels=rev(levels(countfactor))))  
+
+    textcol <- "grey40"
+    
+    plot <-  ggplot(df, aes(x=symbol, y=disease, fill=countfactor))+
+      geom_tile(colour="white", size=0.2)+
+      guides(fill=guide_legend(title="Number of\nClinical Trials"))+
+      labs(x="", y="", title="Enriched liver biomarkers")+
+      scale_y_discrete(expand=c(0, 0))+
+      # scale_x_discrete(expand=c(0, 0), breaks=c("1930", "1940", "1950", "1960", "1970", "1980", "1990", "2000"))+
+      scale_fill_manual(values=c("#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#ddf1da"), na.value = "grey90")+
+      #coord_fixed()+
+      theme_grey(base_size=10)+
+      theme(legend.position="right", legend.direction="vertical",
+            legend.title=element_text(colour=textcol),
+            legend.margin=margin(grid::unit(0, "cm")),
+            legend.text=element_text(colour=textcol, size=7, face="bold"),
+            legend.key.height=grid::unit(0.8, "cm"),
+            legend.key.width=grid::unit(0.2, "cm"),
+            axis.text.x=element_text(size=10, colour=textcol),
+            axis.text.y=element_text(vjust=0.2, colour=textcol),
+            axis.ticks=element_line(size=0.4),
+            plot.background=element_blank(),
+            panel.border=element_blank(),
+            plot.margin=margin(0.7, 0.4, 0.1, 0.2, "cm"),
+            plot.title=element_text(colour=textcol, hjust=0, size=12, face="bold")
+      ) + theme_bw()
+    
+    # plot <-plot + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 6))  
+    plot <-plot + theme(axis.text.x = element_text(  size = 6))  
+    
+    plot
   })
   
   
@@ -288,7 +338,59 @@ function(input, output, session) {
   filter = "top",
   options = list(dom = 'ltipr',
                  columnDefs = list(list(className = 'dt-center', targets ="_all"))),
-  rownames = FALSE)
+  rownames = FALSE,
+  callback = JS("table.on('click.dt', 'tr',
+                  function() {
+                    var data = table.rows(this).data().toArray();
+                    Shiny.setInputValue('gd_data', data, {priority: 'event'});
+                  });"))
+  
+  gene_diseaseProxy <- dataTableProxy("gene_disease")
+  
+  observeEvent(req(input$gd_data), {
+      value <- input$gd_data[2]
+      dt$Symbol <- dt$dt_genes %>% 
+        filter(Gene == value) %>% 
+        select(geneid) %>% 
+        as.character
+  })
+  
+  # output$gd_plot <- renderPlot({
+  #   gene <- "HBB"
+  #   df <- dt$dt_gd %>% 
+  #     filter(symbol == gene) %>% 
+  #     unique() %>% 
+  #     group_by(name) %>%
+  #     mutate(MinYear = min(year, na.rm = T)) %>%
+  #     select(-year) %>%
+  #     unique()
+  # 
+  #   tt <- df %>%  group_by( diseaseid  ) %>%   summarise(nclinicaltrials = n_distinct(nctid)) %>%
+  #     arrange(desc(nclinicaltrials)) %>% head(50)
+  # 
+  #   df <- merge(df, tt, by = c("diseaseid"))
+  #   df <- df %>% select(-nctid) %>% unique() %>%  arrange(MinYear)
+  # 
+  #   df$id <- c(1:nrow(df))
+  #   df$label <- ifelse(nchar(df$name)> 20, paste0(substring(df$name, 1,20), "..."), as.character(df$name))
+  #   # mutate(disease=factor(name, levels=rev(sort(unique(name)))))
+  #   p<- ggplot(df, aes(x= as.Date(ISOdate(MinYear, 1, 1)), y= id, size = nclinicaltrials, label=name)) +
+  #     geom_point(aes(fill="blue", alpha =0.5),  pch=21 )   +
+  #     geom_text_repel(aes(label = label),
+  #                     size = 3.5, max.overlaps = 20) +theme_bw(base_size = 12) 
+  #   +
+  #     scale_x_date(date_breaks = "1 year", date_labels = "%Y")+
+  #     ylab(paste0("Diseases for ", gene)) + xlab("Year of 1st trial")
+  #   +
+  #     labs(size = "N Cts")  + theme(legend.position="none") +
+  #     scale_shape(guide="none") +
+  #     scale_fill_discrete(guide="none")+
+  #     theme(plot.title = element_text(size = 9, face = "bold"),
+  #           legend.title=element_text(size=9),
+  #           legend.text=element_text(size=9))
+  # 
+  #   p
+  # })
   
   
   ########################## PUBLICATIONS ##########################
@@ -318,6 +420,7 @@ function(input, output, session) {
   observeEvent(input$reload1, {
     dt$Symbol <- NULL
     dt$DiseaseId <- NULL
+    dt$gd_symbol <- NULL
     dt$dt_gds <- pool %>%
       tbl("gene_disease_summary") %>% 
       collect()
@@ -370,30 +473,30 @@ function(input, output, session) {
   
   output$plot_summary <- renderPlotly({
     data <- readRDS("data_for_plots.rds")
-    str(data)
     p <- ggplot(data, aes(`Biomarker Type`, percent, fill = factor(`Biomarker Type`))) +
       geom_col() + theme_bw() + xlab("Biomarker Type") +theme(legend.position="none")
     plotly::ggplotly(p, source="click1", tooltip = c("Biomarker Type", "percent")) %>%
       htmlwidgets::onRender(
-        "function(el, x) {
-         var gd = document.getElementById(el.id);
-         gd.on('plotly_selected', function(d) {
-            // beware, sometimes this event fires objects that can't be seralized
-            console.log(d);
-            Shiny.onInputChange('my-select-event', d.range)
+        "function(el) {
+         el.on('plotly_click', function(d) {
+            console.log(d.points[0].data.name);
+            var data = d.points[0].data.name;
+            Shiny.setInputValue('biomarker', data, {priority: 'event'});
          })
-       }") %>% 
-      event_register("plotly_hover")
+       }"
+      )
   })
   
-  eventData <- reactive({
-    ind <- event_data("plotly_hover", source = "click1")
-    ind
-  })
+
   
   output$text <- renderPrint({
-    req(eventData())
-    eventData()
+    input$gd_data
+  })
+  
+  observeEvent(req(input$biomarker), {
+    dt$Biomarker <- input$biomarker
+    reloadData(gene_diseaseProxy)
+    updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
   })
   
   

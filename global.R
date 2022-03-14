@@ -5,9 +5,9 @@ library(shinycustomloader)
 library(dplyr)
 library(bslib)
 library(pool)
-library(kableExtra)
 library(ggplot2)
 library(plotly)
+library(ggrepel)
 
 pool <- dbPool(
   drv = MariaDB(),
