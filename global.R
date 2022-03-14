@@ -7,10 +7,11 @@ library(bslib)
 library(pool)
 library(kableExtra)
 library(ggplot2)
+library(plotly)
 
 pool <- dbPool(
   drv = MariaDB(),
-  host = "david.prib.upf.edu",
+  host = "localhost",
   username = "psebastian",
   password = "",
   dbname = "biomarkers_2022",

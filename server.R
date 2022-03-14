@@ -51,12 +51,14 @@ function(input, output, session) {
         }, 
       
       "gene_disease" = {
-        query <- "select gd.*, g.symbol, d.name
+        query <- "select gd.*, g.symbol, d.name, s.year
             from gene_disease as gd
             left join genes as g
             on gd.geneid = g.geneid
             left join diseases as d
-            on gd.diseaseid = d.diseaseid"
+            on gd.diseaseid = d.diseaseid
+            left join studies as s
+            on gd.nctid = s.nctid"
         dt$dt_gd <- pool %>%
           dbGetQuery(query) %>%
           collect() %>% 
@@ -214,7 +216,6 @@ function(input, output, session) {
         filter(Condition == value) %>%
         select(diseaseid) %>%
         as.character()
-      str(dt$DiseaseId)
       updateNavbarPage(inputId = "navbarPage", selected = "publications")
     }
   })
@@ -224,22 +225,24 @@ function(input, output, session) {
   ########################## GENE-DISEASE SUMMARY ##########################
   
   output$gene_disease_summary <- DT::renderDataTable({
-    dt$dt_gds %>% 
-      filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>% 
+    dt$dt_gds %>%
+      filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>%
       filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE ) %>%
-      select(-geneid, -diseaseid, -id) %>% 
-      rename( "Gene" = symbol, "Condition" = name,  
-              "year initial" = year_initial, "year final" = year_final, 
-              "Num. Clin.Trials" =  nclinicaltrials, 
-              "Num. Pmids" = npmids)  %>% 
-      arrange(desc(`Num. Clin.Trials`) ) %>% 
-      select(Gene, Condition, tfidf, OddsRatio,
+      select(-geneid, -diseaseid, -id) %>%
+      rename( "Gene" = symbol, "Condition" = name,
+              "year initial" = year_initial, "year final" = year_final,
+              "Num. Clin.Trials" =  nclinicaltrials,
+              "Num. Pmids" = npmids)  %>%
+      arrange(desc(`Num. Clin.Trials`) ) %>%
+      select(Gene, Condition, Fisher, OddsRatio,
              `Num. Clin.Trials`,   `Num. Pmids`,
              `year initial`, `year final`) %>%
-      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`)) 
-  }, filter = "top",
+      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`),
+             Fisher = formatC(Fisher, format="e", digits=2, zero.print = TRUE))
+  },filter = "top",
   options = list(dom = 'ltipr',
-                 columnDefs = list(list(className = 'dt-center', targets ="_all"))),
+                 columnDefs = list(list(className = 'dt-center', targets ="_all"))
+                 ),
   selection = list(mode = 'single', target = 'cell'),
   escape = FALSE,
   rownames = FALSE,
@@ -349,13 +352,42 @@ function(input, output, session) {
     updateNavbarPage(inputId = "navbarPage", selected = "about")
   })
   
-  output$plot1 <- renderPlot({
-    data <- readRDS("data_for_plots.rds")
-    p <- ggplot(data, aes(`Biomarker Type`, percent, fill = `Biomarker Type`)) +
-      geom_col() + theme_bw() + xlab("Biomarker Type") +theme(legend.position="none")
-    p
-    # plotly::ggplotly(p)
+  output$home_plot <- renderUI({
+    tagList(
+      h1("Biomarkers in Clinical Trials"),
+      div(id="g1745",
+          img(src="g1745.png")),
+      p("The numbers of clinical trials are now rising in an unprecedented manner.
+        The data they contain can be exploited to extract information about what human
+        diseases are investigated and which are molecular biomarkers used in this massive 
+        pool of studies. In this contribution, we have applied artificial intelligent 
+        technologies to explore protein and gene biomarkers more frequently assessed in
+        Clinical Trials data. We found over 4,300 genes measured in over 55,000 Clinical 
+        Trials involving 3,000 diseases."),
+      plotlyOutput("plot_summary")
+    )
   })
+  
+  output$plot_summary <- renderPlotly({
+    data <- readRDS("data_for_plots.rds")
+    str(data)
+    p <- ggplot(data, aes(`Biomarker Type`, percent, fill = factor(`Biomarker Type`))) +
+      geom_col() + theme_bw() + xlab("Biomarker Type") +theme(legend.position="none")
+    plotly::ggplotly(p, source="click1", tooltip = c("Biomarker Type", "percent")) %>%
+      event_register("plotly_click")
+  })
+  
+  eventData <- reactive({
+    ind <- event_data("plotly_click", source = "click1")
+    ind
+  })
+  
+  output$text <- renderPrint({
+    req(eventData())
+    eventData()
+  })
+  
+  
   
 }
 

@@ -6,7 +6,7 @@ navbarPage(
     tags$link(rel = "stylesheet", type = "text/css", href="custom-css.css")
   ),
   nav_spacer(),
-  tabPanel("About", value = "about", fluidRow(column(12, htmlTemplate("algo.html")))),
+  tabPanel("About", value = "about", uiOutput("home_plot")),
   # tabPanel("About", value = "about", includeHTML("about.html")),
   tabPanel("Biomarkers", value = "genes", withLoader(DT::dataTableOutput("genes"))),
   tabPanel("Conditions", value = "diseases", withLoader(DTOutput("diseases"))),
