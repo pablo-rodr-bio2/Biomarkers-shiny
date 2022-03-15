@@ -11,7 +11,7 @@ library(ggrepel)
 
 pool <- dbPool(
   drv = MariaDB(),
-  host = "localhost",
+  host = "david.prib.upf.edu",
   username = "psebastian",
   password = "",
   dbname = "biomarkers_2022",
