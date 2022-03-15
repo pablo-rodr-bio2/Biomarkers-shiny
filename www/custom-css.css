@@ -17,9 +17,16 @@
   background-color: #778899;
 }
 
+.navbar-nav > li > a {
+  font-size: 120%;
+}
+
 table.dataTable tr.active td, table.dataTable td.active {
   background-color: #DAA520 !important;
 }
+
+.navbar-nav > li > a[data-value='publications'] {color: black !important; background-color: yellow; }
+
 
 #header_title {
   color: #FFFFF0;

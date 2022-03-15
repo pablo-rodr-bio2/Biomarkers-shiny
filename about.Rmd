@@ -1,26 +1,35 @@
 ---
-title: "Biomarkers in Clinical Trials "
+title: "Biomarkers in Clinical Trials"
 output: html_document
+runtime: shiny
 ---
+
+```{r setup, include=FALSE, eval=T}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
 
 The numbers of clinical trials are now rising in an unprecedented manner. The data they contain can be exploited to extract information about what human diseases are investigated and which are molecular biomarkers used in this massive pool of studies. In this contribution, we have applied artificial intelligent technologies to explore protein and gene biomarkers more frequently assessed in Clinical Trials data. We found over 4,300 genes measured in over 55,000 Clinical Trials involving 3,000 diseases. 
 
 
 
-## intervention type
-```{r, echo=FALSE,  message=F, warning=F,out.width="90%",  fig.cap = 'Figure 4:  Phases of the CTs containing biomarkers.'}
-# library(webr)
-# library(ggplot2)
-# datos <- as.data.frame(table( studies$study_type))
-# colnames(datos) <- c("intervention", "count")
-# 
-# PieDonut(datos,aes(intervention,count=count),r0=0.4,r1=0.6,explode=c(2,3),start=3*pi/2, showRatioThreshold = 0, labelposition = 1,  showRatioPie =F)
-```
+## Intervention type
+
+
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, echo=FALSE,results='hide',fig.keep='all', message=FALSE, warning=FALSE}
+library(ggplot2)
+library(plotly)
+
+data <- readRDS("data_for_plots.rds")
+str(data)
+p <- ggplot(data, aes(`Biomarker Type`, percent, fill = `Biomarker Type`)) +
+  geom_col() + theme_bw() + xlab("Biomarker Type") +theme(legend.position="none")
+p
+# plotly::ggplotly(p)
+
 ```
 
 

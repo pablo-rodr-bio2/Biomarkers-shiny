@@ -12,6 +12,7 @@ function(input, output, session) {
                        dt_publications = NULL,
                        Symbol = NULL,
                        DiseaseId = NULL,
+                       Biomarker = NULL,
                        gd_symbol = NULL,
                        gd_name = NULL)
   
@@ -22,15 +23,18 @@ function(input, output, session) {
   ################# MAIN QUERIES ################################
   ###############################################################
   
-  ### everytime we click on a tabSet, it will query MySQL
+  ### everytime we click on a tabSet, it will query the MySQL DB
+  # It will also do some pre data-treatment
+  # 'gene-disease' will also be filtered by geneid and diseaseid
+  # in order to decrease loading time
   
   observe({
     
     switch (req(input$navbarPage),
       "genes" = {
         dt$dt_genes <- pool %>%
-        tbl("genes") %>% 
-        collect() %>% 
+          tbl("genes") %>% 
+          collect() %>% 
           mutate(Gene = createLink_Symbol(geneid, symbol))
         },
       
@@ -38,14 +42,8 @@ function(input, output, session) {
         dt$dt_diseases <- pool %>% 
           tbl("diseases") %>% 
           collect() %>%
-          mutate( Condition = createLink_Name(diseaseid, name))
+          mutate( Condition = createLink_Name(diseaseid, name)) 
       },
-      
-      # "studies" = {
-      #   dt$dt_studies <- pool %>% 
-      #     tbl("studies") %>% 
-      #     collect() 
-      #   },
       
       "gene_disease_summary" = {
         dt$dt_gds <- pool %>%
@@ -54,29 +52,26 @@ function(input, output, session) {
         }, 
       
       "gene_disease" = {
-        query <- "select gd.*, g.symbol, d.name
+        query <- "select gd.*, g.symbol, d.name, s.year
             from gene_disease as gd
             left join genes as g
             on gd.geneid = g.geneid
             left join diseases as d
-            on gd.diseaseid = d.diseaseid"
+            on gd.diseaseid = d.diseaseid
+            left join studies as s
+            on gd.nctid = s.nctid"
         dt$dt_gd <- pool %>%
           dbGetQuery(query) %>%
           collect() %>% 
           filter( if( !is.null(dt$gd_symbol) ) symbol == dt$gd_symbol else TRUE ) %>%
-          filter( if( !is.null(dt$gd_name) ) name == dt$gd_name else TRUE )
+          filter( if( !is.null(dt$gd_name) ) name == dt$gd_name else TRUE ) %>% 
+          filter( if( !is.null(dt$Biomarker) ) bmtype == dt$Biomarker else TRUE )
       },
       
       "publications" = {
-        query <- "select p.*, g.symbol, d.name
-            from publications as p
-            left join genes as g
-            on p.geneid = g.geneid
-            left join diseases as d
-            on p.mesh = d.diseaseid"
-        dt$dt_publications <- pool %>% 
-          dbGetQuery(query) %>% 
-          collect()
+        dt$dt_publications <- pool %>%
+          tbl("publications") %>% 
+          collect() 
       }
     )
   })
@@ -89,39 +84,79 @@ function(input, output, session) {
   ########################## GENES ##########################
   
   output$genes <- DT::renderDataTable({
-    dt$dt_genes %>%
-      rename( "type of gene" = type_of_gene,
-              "protein class" = PROTEIN_CLASS_NAMES,
-              "DPI" = dpi, "DSI" = dsi, "pLI"=pli,
-              "year initial" = year_initial, "year final" = year_final, 
-              "Num. Clin.Trials" =  nclinicaltrials, 
-              "Num. Diseases" = ndiseases, "Num. Pmids" = npmids)  %>% 
-      select(Gene, description, `type of gene`, DSI, DPI, pLI,`protein class`,
-             `Num. Clin.Trials`, `Num. Diseases`, `Num. Pmids`,
-             `year initial`, `year final`
-      ) %>%  arrange(desc(`Num. Clin.Trials`) ) %>% 
-      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`))
-    }, 
-    filter = "top",
-    options = list(scrollX = TRUE, dom = 'ltipr', pageLength = 10,
-                   columnDefs = list(list(className = 'dt-center', targets ="_all"))),
-    rownames = FALSE,
-    escape = FALSE,
-    selection = list(mode = 'single', target = 'cell'))
+    datatable(
+      dt$dt_genes %>%
+        rename( "type of gene" = type_of_gene,
+                "protein class" = PROTEIN_CLASS_NAMES,
+                "DPI" = dpi, "DSI" = dsi, "pLI"=pli,
+                "year initial" = year_initial, "year final" = year_final, 
+                "Num. Clin.Trials" =  nclinicaltrials, 
+                "Num. Diseases" = ndiseases, "Num. Pmids" = npmids)  %>% 
+        select(Gene, description, `type of gene`, DSI, DPI, pLI,`protein class`,
+               `Num. Clin.Trials`, `Num. Diseases`, `Num. Pmids`,
+               `year initial`, `year final`
+        ) %>%  arrange(desc(`Num. Clin.Trials`)),
+      filter = "top",
+      options = list(scrollX = TRUE, dom = 'ltipr', pageLength = 10,
+                     columnDefs = list(list(className = 'dt-center', targets ="_all"))),
+      rownames = FALSE,
+      escape = FALSE,
+      selection = list(mode = 'single', target = 'cell'),
+      callback = JS("table.on('click.dt', 'tr',
+                  function() {
+                    data = table.rows(this).data().toArray();
+                    Shiny.setInputValue('geneid', data, {priority: 'event'});
+                  });")  
+    ) %>% 
+      formatStyle("Num. Pmids", backgroundColor = "yellow")
+
+    })
+  
+  # %>% 
+  #   mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`),
+  #          `Num. Diseases`= createLink_Button(`Num. Diseases`),
+  #          `Num. Pmids` = createLink_Button(`Num. Pmids`))
   
   
   geneProxy <- dataTableProxy('genes')
   
-  observeEvent(req(input$genes_cells_selected), {
+  observeEvent(req(input$geneid), {
     cell_clicked <- input$genes_cell_clicked
     geneProxy %>%  selectCells(NULL)
-    if(cell_clicked$col == 0){
+    if(cell_clicked$col == 0){                ###### redirects to 'Summary'
       value <- cell_clicked$value
       dt$Symbol <- dt$dt_genes %>% 
         filter(Gene == value) %>% 
         select(geneid) %>% 
         as.character
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
+    }
+    if(cell_clicked$col == 7){                ####### redirects to 'Measurements'
+      value <- input$geneid[1]
+      geneProxy %>%  selectCells(NULL)
+      dt$gd_symbol <- dt$dt_genes %>% 
+        filter(Gene == value) %>% 
+        select(symbol) %>% 
+        as.character
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
+    }
+    if(cell_clicked$col == 8){                ####### redirects to 'Summary'
+      value <- input$geneid[1]
+      geneProxy %>%  selectCells(NULL)
+      dt$Symbol <- dt$dt_genes %>%
+        filter(Gene == value) %>%
+        select(geneid) %>%
+        as.character
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
+    }
+    if(cell_clicked$col == 9){                ####### redirects to 'Publications'
+      value <- input$geneid[1]
+      geneProxy %>%  selectCells(NULL)
+      dt$Symbol <- dt$dt_genes %>%
+        filter(Gene == value) %>%
+        select(geneid) %>%
+        as.character
+      updateNavbarPage(inputId = "navbarPage", selected = "publications")
     }
   })
   
@@ -138,17 +173,25 @@ function(input, output, session) {
       select(Condition, "Semantic Type",  "Num. Biomarkers" ,
              `Num. Clin.Trials`,   `Num. Pmids`,
              `year initial`, `year final`) %>%  arrange(desc(`Num. Clin.Trials`) ) %>% 
-      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`))
+      mutate(`Num. Biomarkers` = createLink_Button(`Num. Biomarkers`),
+             `Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`),
+             `Num. Pmids` = createLink_Button(`Num. Pmids`))
   },
   filter = "top",
   selection = list(mode = 'single', target = 'cell'),
   options = list(dom = 'ltipr', columnDefs = list(list(className = 'dt-center', targets ="_all"))),
   rownames = FALSE,
-  escape = FALSE)
+  escape = FALSE,
+  callback = JS("table.on('click.dt', 'tr',
+                  function() {
+                    var data = table.rows(this).data().toArray();
+                    Shiny.setInputValue('diseaseid', data, {priority: 'event'});
+                  });")
+  )
   
   diseaseProxy <- dataTableProxy('diseases')
   
-  observeEvent(req(input$diseases_cells_selected), {
+  observeEvent(input$diseaseid, {
     cell_clicked <- input$diseases_cell_clicked
     diseaseProxy %>% selectCells(NULL)
     if(cell_clicked$col == 0){
@@ -159,6 +202,30 @@ function(input, output, session) {
         as.character()
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
     }
+    if(cell_clicked$col == 2){
+      value <- input$diseaseid[1]
+      dt$DiseaseId <- dt$dt_diseases %>%
+        filter(Condition == value) %>%
+        select(diseaseid) %>%
+        as.character()
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
+    }
+    if(cell_clicked$col == 3){
+      value <- input$diseaseid[1]
+      dt$gd_name <- dt$dt_diseases %>% 
+        filter(Condition == value) %>%
+        select(name) %>%
+        as.character()
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
+    }
+    if(cell_clicked$col == 4){
+      value <- input$diseaseid[1]
+      dt$DiseaseId <- dt$dt_diseases %>% 
+        filter(Condition == value) %>%
+        select(diseaseid) %>%
+        as.character()
+      updateNavbarPage(inputId = "navbarPage", selected = "publications")
+    }
   })
 
 
@@ -166,44 +233,47 @@ function(input, output, session) {
   ########################## GENE-DISEASE SUMMARY ##########################
   
   output$gene_disease_summary <- DT::renderDataTable({
-    dt$dt_gds %>% 
-      filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>% 
+    dt$dt_gds %>%
+      filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>%
       filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE ) %>%
-      select(-geneid, -diseaseid, -id) %>% 
-      rename( "Gene" = symbol, "Condition" = name,  
-              "year initial" = year_initial, "year final" = year_final, 
-              "Num. Clin.Trials" =  nclinicaltrials, 
-              "Num. Pmids" = npmids)  %>% 
-      select(Gene, Condition, 
+      select(-geneid, -diseaseid, -id) %>%
+      rename( "Gene" = symbol, "Condition" = name,
+              "year initial" = year_initial, "year final" = year_final,
+              "Num. Clin.Trials" =  nclinicaltrials,
+              "Num. Pmids" = npmids)  %>%
+      arrange(desc(`Num. Clin.Trials`) ) %>%
+      select(Gene, Condition, Fisher, OddsRatio,
              `Num. Clin.Trials`,   `Num. Pmids`,
              `year initial`, `year final`) %>%
-      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`)) %>% 
-      arrange(desc(`Num. Clin.Trials`) ) 
-  }, filter = "top",
+      mutate(`Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`),
+             Fisher = formatC(Fisher, format="e", digits=2, zero.print = TRUE))
+  },filter = "top",
   options = list(dom = 'ltipr',
-                 columnDefs = list(list(className = 'dt-center', targets ="_all"))),
+                 columnDefs = list(list(className = 'dt-center', targets ="_all"))
+                 ),
   selection = list(mode = 'single', target = 'cell'),
   escape = FALSE,
   rownames = FALSE,
   callback = JS("table.on('click.dt', 'tr',
                   function() {
-                    var data = table.rows(this).data().toArray();;
-                    Shiny.setInputValue('gds_data', data);
+                    var data = table.rows(this).data().toArray();
+                    Shiny.setInputValue('gds_data', data, {priority: 'event'});
                   });")
   )
-
+  
   gdsProxy <- dataTableProxy("gene_disease_summary")
   
   observeEvent(input$gds_data, {
     value <- input$gene_disease_summary_cell_clicked
     gdsProxy %>% selectCells(NULL)
     col <- value$col
-    if(col == "2"){
+    if(col == "4"){
       dt$gd_symbol <- input$gds_data[1]
       dt$gd_name <- input$gds_data[2]
       updateNavbarPage( inputId = "navbarPage", selected = "gene_disease")
-    }
+    } 
   })
+  
   
   
   ########################## GENE-DISEASE ##########################
@@ -227,20 +297,35 @@ function(input, output, session) {
   filter = "top",
   options = list(dom = 'ltipr',
                  columnDefs = list(list(className = 'dt-center', targets ="_all"))),
-  rownames = FALSE)
+  rownames = FALSE,
+  callback = JS("table.on('click.dt', 'tr',
+                  function() {
+                    var data = table.rows(this).data().toArray();
+                    Shiny.setInputValue('gd_data', data, {priority: 'event'});
+                  });"))
+  
+  gene_diseaseProxy <- dataTableProxy("gene_disease")
+  
+  # observeEvent(req(input$gd_data), {
+  #     value <- input$gd_data[2]
+  #     dt$Symbol <- dt$dt_genes %>% 
+  #       filter(Gene == value) %>% 
+  #       select(geneid) %>% 
+  #       as.character
+  # })
   
   
   ########################## PUBLICATIONS ##########################
   
   output$publications <- DT::renderDataTable({
     dt$dt_publications %>%
-      mutate(symbol = createLink_Symbol(geneid, symbol),
-             nctid =   createLink_NCIT(nctid),
-              pmid =   createLink_PMID(pmid),
-             name = createLink_Name(mesh, name)) %>%
-      select(-id, -geneid, -mesh) %>%
-      rename("Gene" = symbol, "Condition" = name, 
-             "NCT ID" = nctid ) %>%  arrange(desc(year) )
+      filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>% 
+      filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE ) %>% 
+      mutate(nctid =   createLink_NCIT(nctid),
+              pmid =   createLink_PMID(pmid)) %>%
+      select(-id) %>%
+      rename("NCT ID" = nctid) %>%
+      arrange(desc(year))
     
   }, filter = "top",
   options = list(dom = 'ltipr',
@@ -257,6 +342,7 @@ function(input, output, session) {
   observeEvent(input$reload1, {
     dt$Symbol <- NULL
     dt$DiseaseId <- NULL
+    dt$gd_symbol <- NULL
     dt$dt_gds <- pool %>%
       tbl("gene_disease_summary") %>% 
       collect()
@@ -274,6 +360,13 @@ function(input, output, session) {
       dbGetQuery(query) %>%
       collect()
   })
+  
+  observeEvent(input$reload3, {
+    dt$dt_publications <- NULL
+    dt$dt_publications <- pool %>%
+      tbl("publications") %>% 
+      collect() 
+  })
 
   
   ###############################################################
@@ -283,10 +376,43 @@ function(input, output, session) {
   observeEvent(input$header_title, {
     updateNavbarPage(inputId = "navbarPage", selected = "about")
   })
+  
+  aboutServer("home")
+  
+
+  textServer("text1", reactive(input$gd_data))
+
+  
+  observeEvent(req(input$biomarker), {
+    dt$Biomarker <- input$biomarker
+    reloadData(gene_diseaseProxy)
+    updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
+  })
+  
+  
+  
 }
 
 
 # LEGACY CODE
+
+# "studies" = {
+#   dt$dt_studies <- pool %>% 
+#     tbl("studies") %>% 
+#     collect() 
+#   },
+
+# "publications" = {
+#   query <- "select p.*, g.symbol, d.name
+#             from publications as p
+#             left join genes as g
+#             on p.geneid = g.geneid
+#             left join diseases as d
+#             on p.mesh = d.diseaseid"
+#   dt$dt_publications <- pool %>% 
+#     dbGetQuery(query) %>% 
+#     collect()
+# }
 # 
 # ########################## STUDIES ##########################
 # 
