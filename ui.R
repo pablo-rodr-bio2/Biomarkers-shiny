@@ -8,7 +8,7 @@ navbarPage(
   nav_spacer(),
   tabPanel("About", value = "about", aboutUI("home")),
   # tabPanel("About", value = "about", includeHTML("about.html")),
-  tabPanel("Biomarkers", value = "genes", withLoader(DT::dataTableOutput("genes"))),
+  tabPanel("Biomarkers", value = "genes", biomarkersUI("genes1")),
   tabPanel("Conditions", value = "diseases", withLoader(DTOutput("diseases"))),
   tabPanel("Summary",  value = "gene_disease_summary",
            actionButton("reload1", "Reload Data", class="btn-primary"),

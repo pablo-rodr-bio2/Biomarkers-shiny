@@ -8,10 +8,11 @@ library(pool)
 library(ggplot2)
 library(plotly)
 library(ggrepel)
+library(rvest)
 
 pool <- dbPool(
   drv = MariaDB(),
-  host = "david.prib.upf.edu",
+  host = "localhost",
   username = "psebastian",
   password = "",
   dbname = "biomarkers_2022",
@@ -28,7 +29,7 @@ createLink_Button <- function(text){
 }
 
 createLink_Symbol <- function(geneid, symbol){
-  sprintf("<a href='https://www.ncbi.nlm.nih.gov/gene/%s' target='_blank'>%s</a>",geneid, symbol)
+  sprintf("<a id='%s' href='https://www.ncbi.nlm.nih.gov/gene/%s' target='_blank'>%s</a>", geneid, geneid, symbol)
 }
 
 createLink_Name <- function(diseaseid, name){
