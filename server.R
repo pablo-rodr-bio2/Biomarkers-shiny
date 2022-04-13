@@ -15,59 +15,85 @@ function(input, output, session) {
   ###############################################################
   
   
-  ########################## GENES ##########################
+  ########################## BIOMARKERS ##########################
   
   geneSelected <- biomarkersServer("genes1")
   
   observeEvent(geneSelected(), {
-    dt$GeneId <- geneSelected()$geneId
     colName <- geneSelected()$colName
     if (colName %in% c("Gene", "Num. Diseases")) {
+      dt$GeneId <- geneSelected()$geneId
+      dt$DiseaseId <- NULL
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
     }
     if (colName == "Num. Clin.Trials") {
+      dt$gd_geneId <- geneSelected()$geneId
+      dt$gd_diseaseId <- NULL
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
     }
     if (colName == "Num. Pmids") {
+      dt$GeneId <- geneSelected()$geneId
+      dt$DiseaseId <- NULL
       updateNavbarPage(inputId = "navbarPage", selected = "publications")
     }
   })
 
+  ########################## CONDITIONS  ########################## 
   
   diseaseSelected <- conditionServer("diseases1")
   
   observeEvent(diseaseSelected(), {
-    dt$DiseaseId <- diseaseSelected()$diseaseId
     colName <- diseaseSelected()$colName
     if (colName %in% c("Condition", "Num. Biomarkers")) {
+      dt$DiseaseId <- diseaseSelected()$diseaseId
+      dt$GeneId <- NULL
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
     }
     if (colName == "Num. Clin.Trials") {
+      dt$gd_diseaseId <- diseaseSelected()$diseaseId
+      dt$gd_geneId <- NULL
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
     }
     if (colName == "Num. Pmids") {
+      dt$DiseaseId <- diseaseSelected()$diseaseId
+      dt$GeneId <- NULL
       updateNavbarPage(inputId = "navbarPage", selected = "publications")
     }
   })
   
-
+  
+  ########################## SUMMARY  ########################## 
+  
   summarySelected <- summaryServer("summary1", reactive(dt$GeneId), reactive(dt$DiseaseId))
   
   observeEvent(summarySelected(), {
+    colName <- summarySelected()$colName
     dt$gd_geneId <- summarySelected()$geneId
     dt$gd_diseaseId <- summarySelected()$diseaseId
-    colName <- summarySelected()$colName
     if (colName == "Num. Clin.Trials"){
+      dt$gd_geneId <- summarySelected()$geneId
+      dt$gd_diseaseId <- summarySelected()$diseaseId
       updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
     }
     if( colName == "Num. Pmids"){
+      dt$GeneId <- summarySelected()$geneId
+      dt$DiseaseId <- summarySelected()$diseaseId
       updateNavbarPage(inputId = "navbarPage", selected = "publications")
     }
   })
   
-  measurementsServer("measurements1", reactive(dt$GeneId), reactive(dt$DiseaseId), 
-                     reactive(dt$gd_geneId), reactive(dt$gd_diseaseId))
+  ########################## MEASUREMENTS  ########################## 
   
+  measurementSelected <- measurementsServer("measurements1", reactive(dt$gd_geneId), reactive(dt$gd_diseaseId))
+  
+  observeEvent(measurementSelected(), {
+    dt$GeneId <- measurementSelected()$geneId
+    dt$DiseaseId <- measurementSelected()$diseaseId
+    updateNavbarPage(inputId = "navbarPage", selected = "publications")
+  })
+  
+  
+  ########################## PUBLICATIONS  ########################## 
   
   publicationServer("publications1", reactive(dt$GeneId), reactive(dt$DiseaseId))
   
@@ -120,11 +146,9 @@ function(input, output, session) {
     tags$iframe(seamless = "seamless",
                 frameborder = "0",
                 src = "tmpuser/rmarkdown/index.html",
-                width = "100%",
-                height = 800)
+                style='width:100%; height:90vh;')
   })
   
-
   # textServer("text1", summarySelected())
 
   

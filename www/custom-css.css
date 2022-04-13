@@ -27,6 +27,10 @@ table.dataTable tr.active td, table.dataTable td.active {
 
 .navbar-nav > li > a[data-value='publications'] {color: black !important; background-color: yellow; }
 
+.navbar-nav > li > a[data-value='gene_disease_summary'] {color: black !important; background-color: green; }
+
+.navbar-nav > li > a[data-value='gene_disease'] {color: black !important; background-color: purple; }
+
 
 #header_title {
   color: #FFFFF0;

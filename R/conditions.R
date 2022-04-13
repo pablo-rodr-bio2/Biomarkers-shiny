@@ -24,11 +24,7 @@ conditionServer <- function(id){
                    "Num. Pmids" = npmids) %>%
             select(Condition, "Semantic Type",  "Num. Biomarkers" ,
                    `Num. Clin.Trials`,   `Num. Pmids`,
-                   `year initial`, `year final`) %>%  arrange(desc(`Num. Clin.Trials`) ) %>%
-            mutate(`Num. Biomarkers` = createLink_Button(`Num. Biomarkers`),
-                   `Num. Clin.Trials` = createLink_Button(`Num. Clin.Trials`),
-                   `Num. Pmids` = createLink_Button(`Num. Pmids`))
-      
+                   `year initial`, `year final`) %>%  arrange(desc(`Num. Clin.Trials`) )
     })
     
     ### Produce table
@@ -42,13 +38,18 @@ conditionServer <- function(id){
     )
     
     output$diseases <- renderDataTable(
-      data(),
-      filter = "top",
-      selection = list(mode = 'single', target = 'cell'),
-      options = list(dom = 'ltipr', columnDefs = list(list(className = 'dt-center', targets ="_all"))),
-      rownames = FALSE,
-      escape = FALSE,
-      callback = JS(js)
+      datatable(
+        data(),
+        filter = "top",
+        selection = list(mode = 'single', target = 'cell'),
+        options = list(dom = 'ltipr', columnDefs = list(list(className = 'dt-center', targets ="_all"))),
+        rownames = FALSE,
+        escape = FALSE,
+        callback = JS(js)
+      ) %>% formatStyle("Condition", backgroundColor = "green") %>% 
+        formatStyle("Num. Biomarkers", backgroundColor = "green") %>% 
+        formatStyle("Num. Clin.Trials", backgroundColor = "purple") %>% 
+        formatStyle("Num. Pmids", backgroundColor = "yellow")
     )
     
     diseaseData <- eventReactive(req(length(input$diseases_cell_clicked) > 0), {
@@ -69,44 +70,3 @@ conditionServer <- function(id){
     return(diseaseData)
   })
 }
-
-
-# 
-# diseaseProxy <- dataTableProxy('diseases')
-# 
-# observeEvent(input$diseaseid, {
-#   cell_clicked <- input$diseases_cell_clicked
-#   diseaseProxy %>% selectCells(NULL)
-#   if(cell_clicked$col == 0){
-#     value <- cell_clicked$value
-#     dt$DiseaseId <- dt$dt_diseases %>%
-#       filter(Condition == value) %>%
-#       select(diseaseid) %>%
-#       as.character()
-#     updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
-#   }
-#   if(cell_clicked$col == 2){
-#     value <- input$diseaseid[1]
-#     dt$DiseaseId <- dt$dt_diseases %>%
-#       filter(Condition == value) %>%
-#       select(diseaseid) %>%
-#       as.character()
-#     updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
-#   }
-#   if(cell_clicked$col == 3){
-#     value <- input$diseaseid[1]
-#     dt$gd_name <- dt$dt_diseases %>%
-#       filter(Condition == value) %>%
-#       select(name) %>%
-#       as.character()
-#     updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
-#   }
-#   if(cell_clicked$col == 4){
-#     value <- input$diseaseid[1]
-#     dt$DiseaseId <- dt$dt_diseases %>%
-#       filter(Condition == value) %>%
-#       select(diseaseid) %>%
-#       as.character()
-#     updateNavbarPage(inputId = "navbarPage", selected = "publications")
-#   }
-# })
