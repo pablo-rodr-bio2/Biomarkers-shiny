@@ -1,9 +1,9 @@
 summaryUI <- function(id){
   ns <- NS(id)
-  withLoader(DT::DTOutput(ns("gene_disease_summary")))
+  withLoader(DT::DTOutput(ns("geneDiseaseSummary")))
 }
 
-summaryServer <- function(id) {
+summaryServer <- function(id, geneId, diseaseId) {
   moduleServer(id, function(input, output, session) {
     
     ### Query
@@ -16,8 +16,8 @@ summaryServer <- function(id) {
     ### Format data
     data <- reactive({
       summaries() %>%
-          # filter( if( !is.null(dt$Symbol) ) geneid == dt$Symbol else TRUE ) %>%
-          # filter( if( !is.null(dt$DiseaseId) ) diseaseid == dt$DiseaseId else TRUE ) %>%
+          filter( if( !is.null(geneId()) ) geneid == geneId() else TRUE ) %>%
+          filter( if( !is.null(diseaseId()) ) diseaseid == diseaseId() else TRUE ) %>%
           select(-geneid, -diseaseid, -id) %>%
           rename( "Gene" = symbol, "Condition" = name,
                   "year initial" = year_initial, "year final" = year_final,
@@ -32,7 +32,17 @@ summaryServer <- function(id) {
     })
     
     ### Produce table
-    output$gene_disease_summary <- renderDataTable(
+    js <- sprintf(
+      "table.on('click', 'td', function(){
+        var cell = table.cell(this);
+        var colindex = cell.index().column;
+        var colname = table.column(colindex).header().innerText;
+        Shiny.setInputValue('%s', colname);
+        console.log(colname);
+      });", session$ns("columnName")
+    )
+    
+    output$geneDiseaseSummary <- renderDataTable(
       data(),
       filter = "top",
       options = list(dom = 'ltipr',
@@ -41,11 +51,28 @@ summaryServer <- function(id) {
       selection = list(mode = 'single', target = 'cell'),
       escape = FALSE,
       rownames = FALSE,
-      callback = JS("table.on('click.dt', 'tr',
-                        function() {
-                          var data = table.rows(this).data().toArray();
-                          Shiny.setInputValue('gds_data', data, {priority: 'event'});
-                        });"))
+      callback = JS(js)
+    )
+    
+    summaryData <- eventReactive(req(length(input$geneDiseaseSummary_cell_clicked) > 0), {
+      colName <- input$columnName
+      geneId <- NULL
+      diseaseId <- NULL
+      if (colName %in% c("Num. Clin.Trials", "Num. Pmids" )) {
+        geneId <- data()[input$geneDiseaseSummary_cell_clicked$row, "Gene", drop =TRUE]
+        diseaseId <- data()[input$geneDiseaseSummary_cell_clicked$row, "Condition", drop =TRUE]
+        return(
+          list(
+            geneId = geneId,
+            diseaseId = diseaseId,
+            colName = colName
+          )
+        )
+      } else return(NULL)
+    })
+
+    return(summaryData)
+    
   })
 }
 

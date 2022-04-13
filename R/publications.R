@@ -3,7 +3,7 @@ publicationUI <- function(id){
   withLoader(DTOutput(ns("publications")))
 }
 
-publicationServer <- function(id){
+publicationServer <- function(id, geneId, diseaseId){
   moduleServer(id, function(input, output, session){
     
     ###  Query
@@ -16,6 +16,8 @@ publicationServer <- function(id){
     ### Format data
     data <- reactive({
       publications() %>% 
+        filter( if( !is.null(geneId()) ) geneid == geneId() else TRUE ) %>%
+        filter( if( !is.null(diseaseId()) ) diseaseid == diseaseId() else TRUE ) %>%
         mutate(nctid =   createLink_NCIT(nctid),
                pmid =   createLink_PMID(pmid)) %>%
         select(-id) %>%

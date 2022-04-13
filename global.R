@@ -29,11 +29,13 @@ createLink_Button <- function(text){
 }
 
 createLink_Symbol <- function(geneid, symbol){
-  sprintf("<a id='%s' href='https://www.ncbi.nlm.nih.gov/gene/%s' target='_blank'>%s</a>", geneid, geneid, symbol)
+  sprintf("<a id='%s' href='https://www.ncbi.nlm.nih.gov/gene/%s' target='_blank'>%s</a>",
+          geneid, geneid, symbol)
 }
 
 createLink_Name <- function(diseaseid, name){
-  sprintf("<a href='https://meshb.nlm.nih.gov/record/ui?ui=%s' target='_blank'>%s</a>",diseaseid, name)
+  sprintf("<a id='%s' href='https://meshb.nlm.nih.gov/record/ui?ui=%s' target='_blank'>%s</a>",
+          diseaseid, diseaseid, name)
 }
 
 

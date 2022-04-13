@@ -1,13 +1,9 @@
 biomarkersUI <- function(id){
   ns <- NS(id)
-  tagList(
-    withLoader(DT::dataTableOutput(ns("genes"))),
-    textOutput(ns("text1"))
-  )
-  
+  withLoader(DT::dataTableOutput(ns("genes")))
 }
 
-biomarkersServer <- function(id, parent_session) {
+biomarkersServer <- function(id) {
   moduleServer(id, function(input, output, session) {
     
     geneid <- reactive(NULL)
@@ -34,12 +30,23 @@ biomarkersServer <- function(id, parent_session) {
                 "Num. Diseases" = ndiseases,
                 "Num. Pmids" = npmids)  %>%
         select(Gene, description, `type of gene`, DSI, DPI, pLI,`protein class`,
-               `Num. Clin.Trials`, `Num. Diseases`, `Num. Pmids`,
+               `Num. Diseases`, `Num. Clin.Trials`, `Num. Pmids`,
                `year initial`, `year final`) %>%
         arrange(desc(`Num. Clin.Trials`))
     )
     
     ### Produce table
+    
+    # javascript for the table: gets the column name of the clicked cell
+    js <- sprintf(
+      "table.on('click', 'td', function(){
+        var cell = table.cell(this);
+        var colindex = cell.index().column;
+        var colname = table.column(colindex).header().innerText;
+        Shiny.setInputValue('%s', colname);
+      });", session$ns("columnName")
+    )
+    
     # in order to use formatStyle(), must use datatable() wrapper first
     output$genes <- DT::renderDataTable({
       datatable(
@@ -49,23 +56,29 @@ biomarkersServer <- function(id, parent_session) {
                        columnDefs = list(list(className = 'dt-center', targets ="_all"))),
         rownames = FALSE,
         escape = FALSE,
-        selection = list(mode = 'single', target = 'cell')
+        selection = list(mode = 'single', target = 'cell'),
+        callback = JS(js)
       ) %>% 
         formatStyle("Num. Pmids", backgroundColor = "yellow")
       })
     
-    geneid <- eventReactive(req(length(input$genes_cell_clicked) > 0), {
-      col <- input$genes_cell_clicked$col
-      if(col == 0) {
-        geneid <- data()[input$genes_cell_clicked$row, "Gene", drop =TRUE]
-        geneid <- geneid %>% read_html() %>% html_node("a") %>% html_attr("id")
-        geneid
+    geneData <- eventReactive(req(length(input$genes_cell_clicked) > 0), {
+      colName <- input$columnName
+      geneId <- NULL
+      if (colName %in% c("Gene", "Num. Diseases", "Num. Clin.Trials", "Num. Pmids") ) {
+        geneId <- data()[input$genes_cell_clicked$row, "Gene", drop =TRUE]
+        geneId <- geneId %>% read_html() %>% html_node("a") %>% html_attr("id")
+        return(
+          list(
+            geneId = geneId,
+            colName = colName
+          )
+        )
       } else return(NULL)
+      
     })
     
-    output$text1 <- renderText(geneid())
-    
-    return(geneid)
+    return(geneData)
 
   })
 }

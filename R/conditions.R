@@ -32,6 +32,15 @@ conditionServer <- function(id){
     })
     
     ### Produce table
+    js <- sprintf(
+      "table.on('click', 'td', function(){
+        var cell = table.cell(this);
+        var colindex = cell.index().column;
+        var colname = table.column(colindex).header().innerText;
+        Shiny.setInputValue('%s', colname);
+      });", session$ns("columnName")
+    )
+    
     output$diseases <- renderDataTable(
       data(),
       filter = "top",
@@ -39,12 +48,25 @@ conditionServer <- function(id){
       options = list(dom = 'ltipr', columnDefs = list(list(className = 'dt-center', targets ="_all"))),
       rownames = FALSE,
       escape = FALSE,
-      callback = JS("table.on('click.dt', 'tr',
-                      function() {
-                        var data = table.rows(this).data().toArray();
-                        Shiny.setInputValue('diseaseid', data, {priority: 'event'});
-                      });")
-      )
+      callback = JS(js)
+    )
+    
+    diseaseData <- eventReactive(req(length(input$diseases_cell_clicked) > 0), {
+      colName <- input$columnName
+      diseaseId <- NULL
+      if (colName %in% c("Condition", "Num. Biomarkers", "Num. Clin.Trials", "Num. Pmids") ) {
+        diseaseId <- data()[input$diseases_cell_clicked$row, "Condition", drop =TRUE]
+        diseaseId <- diseaseId %>% read_html() %>% html_node("a") %>% html_attr("id")
+        return(
+          list(
+            diseaseId = diseaseId,
+            colName = colName
+          )
+        )
+      } else return(NULL)
+    })
+    
+    return(diseaseData)
   })
 }
 

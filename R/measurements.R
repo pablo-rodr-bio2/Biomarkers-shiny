@@ -3,7 +3,7 @@ measurementsUI <- function(id){
   withLoader(DTOutput(ns("gene_disease")))
 }
 
-measurementsServer <- function(id){
+measurementsServer <- function(id, geneId, diseaseId, gd_gene, gd_disease){
   moduleServer(id, function(input, output, session){
     
     ### Query
@@ -28,6 +28,10 @@ measurementsServer <- function(id){
     ### Format data
     data <- reactive({
       measurements() %>%
+        filter( if( !is.null(geneId()) ) geneid == geneId() else TRUE ) %>%
+        filter( if( !is.null(diseaseId()) ) diseaseid == diseaseId() else TRUE ) %>%
+        filter( if( !is.null(gd_gene()) ) symbol == gd_gene() else TRUE ) %>% 
+        filter( if( !is.null(gd_disease()) ) name == gd_disease() else TRUE ) %>%
         mutate(symbol = createLink_Symbol(geneid, symbol),
                nctid =   createLink_NCIT(nctid),
                #  pmid =   createLink_PMID(pmid),

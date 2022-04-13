@@ -4,11 +4,11 @@ function(input, output, session) {
   ################# REACTIVE VALUES #############################
   ###############################################################
   
-  dt <- reactiveValues(Symbol = NULL,
+  dt <- reactiveValues(GeneId = NULL,
                        DiseaseId = NULL,
                        Biomarker = NULL,
-                       gd_symbol = NULL,
-                       gd_name = NULL)
+                       gd_geneId = NULL,
+                       gd_diseaseId = NULL)
 
   ###############################################################
   ###################### TABLES #################################
@@ -17,27 +17,59 @@ function(input, output, session) {
   
   ########################## GENES ##########################
   
-  modified_symbol <- biomarkersServer("genes1", parent_session = session)
+  geneSelected <- biomarkersServer("genes1")
   
-  observeEvent(modified_symbol(), {
-    dt$Symbol <- modified_symbol()
-    updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
+  observeEvent(geneSelected(), {
+    dt$GeneId <- geneSelected()$geneId
+    colName <- geneSelected()$colName
+    if (colName %in% c("Gene", "Num. Diseases")) {
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
+    }
+    if (colName == "Num. Clin.Trials") {
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
+    }
+    if (colName == "Num. Pmids") {
+      updateNavbarPage(inputId = "navbarPage", selected = "publications")
+    }
   })
 
   
-  conditionServer("diseases1")
+  diseaseSelected <- conditionServer("diseases1")
+  
+  observeEvent(diseaseSelected(), {
+    dt$DiseaseId <- diseaseSelected()$diseaseId
+    colName <- diseaseSelected()$colName
+    if (colName %in% c("Condition", "Num. Biomarkers")) {
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease_summary")
+    }
+    if (colName == "Num. Clin.Trials") {
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
+    }
+    if (colName == "Num. Pmids") {
+      updateNavbarPage(inputId = "navbarPage", selected = "publications")
+    }
+  })
   
 
+  summarySelected <- summaryServer("summary1", reactive(dt$GeneId), reactive(dt$DiseaseId))
   
-  summaryServer("summary1")
+  observeEvent(summarySelected(), {
+    dt$gd_geneId <- summarySelected()$geneId
+    dt$gd_diseaseId <- summarySelected()$diseaseId
+    colName <- summarySelected()$colName
+    if (colName == "Num. Clin.Trials"){
+      updateNavbarPage(inputId = "navbarPage", selected = "gene_disease")
+    }
+    if( colName == "Num. Pmids"){
+      updateNavbarPage(inputId = "navbarPage", selected = "publications")
+    }
+  })
   
-
-  
-  measurementsServer("measurements1")
-  
+  measurementsServer("measurements1", reactive(dt$GeneId), reactive(dt$DiseaseId), 
+                     reactive(dt$gd_geneId), reactive(dt$gd_diseaseId))
   
   
-  publicationServer("publications1")
+  publicationServer("publications1", reactive(dt$GeneId), reactive(dt$DiseaseId))
   
   
   ###############################################################
@@ -93,7 +125,7 @@ function(input, output, session) {
   })
   
 
-  textServer("text1", reactive(input$gd_data))
+  # textServer("text1", summarySelected())
 
   
   observeEvent(req(input$biomarker), {
