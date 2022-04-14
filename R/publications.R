@@ -1,6 +1,10 @@
 publicationUI <- function(id){
   ns <- NS(id)
-  withLoader(DTOutput(ns("publications")))
+  tagList(
+    actionButton(ns("reload"), "Reload Data", class="btn-primary"),
+    hr(),
+    withLoader(DTOutput(ns("publications")))
+  )
 }
 
 publicationServer <- function(id, geneId, diseaseId){
@@ -13,11 +17,19 @@ publicationServer <- function(id, geneId, diseaseId){
       collect()
     })
     
+    ### Store identifiers in order to be able to be reseted
+    rv <- reactiveValues(geneId = NULL, diseaseId = NULL)
+    
+    observe({
+      rv$geneId <- geneId()
+      rv$diseaseId <- diseaseId()
+    })
+    
     ### Format data
     data <- reactive({
       publications() %>% 
-        filter( if( !is.null(geneId()) ) geneid == geneId() else TRUE ) %>%
-        filter( if( !is.null(diseaseId()) ) diseaseid == diseaseId() else TRUE ) %>%
+        filter( if( !is.null(rv$geneId) ) geneid == rv$geneId else TRUE ) %>%
+        filter( if( !is.null(rv$diseaseId) ) diseaseid == rv$diseaseId else TRUE ) %>%
         mutate(nctid =   createLink_NCIT(nctid),
                pmid =   createLink_PMID(pmid)) %>%
         select(-id) %>%
@@ -34,5 +46,11 @@ publicationServer <- function(id, geneId, diseaseId){
       escape = FALSE,
       rownames = FALSE
     )
+    
+    ### Reset button
+    observeEvent(input$reload, {
+      rv$geneId <- NULL
+      rv$diseaseId <- NULL
+    })
   })
 }

@@ -29,20 +29,30 @@ createLink_Button <- function(text){
 }
 
 createLink_Symbol <- function(geneid, symbol){
-  sprintf("<a id='%s' href='https://www.ncbi.nlm.nih.gov/gene/%s' target='_blank'>%s</a>",
-          geneid, geneid, symbol)
+  sprintf("%s <a id='%s' href='https://www.ncbi.nlm.nih.gov/gene/%s' target='_blank'>
+                <i class='fa' style='font-size:24px'>&#xf14c;</i>
+              </a>",
+          symbol, geneid, geneid)
 }
 
 createLink_Name <- function(diseaseid, name){
-  sprintf("<a id='%s' href='https://meshb.nlm.nih.gov/record/ui?ui=%s' target='_blank'>%s</a>",
-          diseaseid, diseaseid, name)
+  sprintf("%s <a id='%s' href='https://meshb.nlm.nih.gov/record/ui?ui=%s' target='_blank'>
+                <i class='fa' style='font-size:24px'>&#xf14c;</i>
+              </a>",
+          name, diseaseid, diseaseid)
 }
 
 
 createLink_NCIT <- function(nctid){
-  sprintf("<a href='https://clinicaltrials.gov/ct2/show/%s' target='_blank'>%s</a>",nctid, nctid)
+  sprintf("%s <a href='https://clinicaltrials.gov/ct2/show/%s' target='_blank'>
+                <i class='fa' style='font-size:24px'>&#xf14c;</i>
+              </a>",
+          nctid, nctid)
 }
 
 createLink_PMID <- function(pmid){
-  sprintf("<a href='https://pubmed.ncbi.nlm.nih.gov/%s' target='_blank'>%s</a>",pmid, pmid)
+  sprintf("%s <a href='https://pubmed.ncbi.nlm.nih.gov/%s' target='_blank'>
+                 <i class='fa' style='font-size:24px'>&#xf14c;</i>
+              </a>",
+          pmid, pmid)
 }

@@ -1,6 +1,10 @@
 summaryUI <- function(id){
   ns <- NS(id)
-  withLoader(DT::DTOutput(ns("geneDiseaseSummary")))
+  tagList(
+    actionButton(ns("reload"), "Reload Data", class="btn-primary"),
+    hr(),
+    withLoader(DT::DTOutput(ns("geneDiseaseSummary")))
+  )
 }
 
 summaryServer <- function(id, geneId, diseaseId) {
@@ -13,11 +17,19 @@ summaryServer <- function(id, geneId, diseaseId) {
         collect() 
     })
     
+    ### Store identifiers in order to be able to be reseted
+    rv <- reactiveValues(geneId = NULL, diseaseId = NULL)
+    
+    observe({
+      rv$geneId <- geneId()
+      rv$diseaseId <- diseaseId()
+    })
+    
     ### Format data
     data <- reactive({
       summaries() %>%
-        filter( if( !is.null(geneId()) ) geneid == geneId() else TRUE ) %>%
-        filter( if( !is.null(diseaseId()) ) diseaseid == diseaseId() else TRUE ) %>%
+        filter( if( !is.null(rv$geneId) ) geneid == rv$geneId else TRUE ) %>%
+        filter( if( !is.null(rv$diseaseId) ) diseaseid == rv$diseaseId else TRUE ) %>%
         rename( "Gene" = symbol, "Condition" = name,
                 "year initial" = year_initial, "year final" = year_final,
                 "Num. Clin.Trials" =  nclinicaltrials,
@@ -28,6 +40,8 @@ summaryServer <- function(id, geneId, diseaseId) {
     })
     
     ### Produce table
+    
+    # js
     js <- sprintf(
       "table.on('click', 'td', function(){
         var cell = table.cell(this);
@@ -38,6 +52,7 @@ summaryServer <- function(id, geneId, diseaseId) {
       });", session$ns("columnName")
     )
     
+    # table
     output$geneDiseaseSummary <- renderDataTable(
       datatable(
         data(),
@@ -57,6 +72,7 @@ summaryServer <- function(id, geneId, diseaseId) {
         formatStyle("Num. Pmids", backgroundColor = "yellow")
     )
     
+    ## data to be returned (ids for other tables)
     summaryData <- eventReactive(req(length(input$geneDiseaseSummary_cell_clicked) > 0), {
       colName <- input$columnName
       geneId <- NULL
@@ -72,6 +88,12 @@ summaryServer <- function(id, geneId, diseaseId) {
           )
         )
       } else return(NULL)
+    })
+    
+    ### Reset button
+    observeEvent(input$reload, {
+      rv$geneId <- NULL
+      rv$diseaseId <- NULL
     })
 
     return(summaryData)

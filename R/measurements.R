@@ -1,6 +1,11 @@
 measurementsUI <- function(id){
   ns <- NS(id)
-  withLoader(DTOutput(ns("geneDisease")))
+  tagList(
+    actionButton(ns("reload"), "Reload Data", class="btn-primary"),
+    hr(),
+    withLoader(DTOutput(ns("geneDisease")))
+  )
+  
 }
 
 measurementsServer <- function(id, geneId, diseaseId){
@@ -21,11 +26,19 @@ measurementsServer <- function(id, geneId, diseaseId){
         collect() 
     })
     
+    ### Store identifiers in order to be able to be reseted
+    rv <- reactiveValues(geneId = NULL, diseaseId = NULL)
+    
+    observe({
+      rv$geneId <- geneId()
+      rv$diseaseId <- diseaseId()
+    })
+    
     ### Format data
     data <- reactive({
       measurements() %>%
-        filter( if( !is.null(geneId()) ) geneid == geneId() else TRUE ) %>%
-        filter( if( !is.null(diseaseId()) ) diseaseid == diseaseId() else TRUE ) %>%
+        filter( if( !is.null(rv$geneId) ) geneid == rv$geneId else TRUE ) %>%
+        filter( if( !is.null(rv$diseaseId) ) diseaseid == rv$diseaseId else TRUE ) %>%
         mutate(symbol = createLink_Symbol(geneid, symbol),
                nctid =   createLink_NCIT(nctid),
                name = createLink_Name(diseaseid, name)) %>%
@@ -76,6 +89,12 @@ measurementsServer <- function(id, geneId, diseaseId){
           )
         )
       } else return(NULL)
+    })
+    
+    ## reset button
+    observeEvent(input$reload, {
+      rv$geneId <- NULL
+      rv$diseaseId <- NULL
     })
     
     return(measurementData)
