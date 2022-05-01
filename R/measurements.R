@@ -53,6 +53,8 @@ measurementsServer <- function(id, geneId, diseaseId){
     ### print table and heatmap
     output$measurements_plots <- renderUI({
       if(!is.null(rv$geneId) || !is.null(rv$diseaseId)){
+        withLoader(DTOutput(ns("geneDisease")))
+      } else {
         fluidRow(
           column(8,
                  withLoader(DTOutput(ns("geneDisease")))
@@ -67,8 +69,6 @@ measurementsServer <- function(id, geneId, diseaseId){
                  
           )
         )
-      } else {
-        column(12, withLoader(DTOutput(ns("geneDisease"))))
       }
     })
     
@@ -146,6 +146,7 @@ measurementsServer <- function(id, geneId, diseaseId){
     })
     
     output$plot1 <- renderPlotly({
+      req(is.null(rv$geneId) && is.null(rv$diseaseId))
       p <- ggplot(dataPlot(), aes(`Biomarker Type`, percent, fill = `Biomarker Type`)) +
         geom_col() + theme_bw() + xlab("Biomarker Type") +theme(legend.position="none")
       plotly::ggplotly(p)
@@ -153,6 +154,7 @@ measurementsServer <- function(id, geneId, diseaseId){
     })
     
     output$plot2 <- renderPlotly({
+      req(is.null(rv$geneId) && is.null(rv$diseaseId))
       p<- ggdotchart(dataPlot(), x = "Biomarker Type", y = "percent",
                      color = "Biomarker Type",                                # Color by groups
                      #   palette = c("#00AFBB", "#E7B800", "#FC4E07"), # Custom color palette
