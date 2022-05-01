@@ -4,23 +4,26 @@ measurementsUI <- function(id){
     actionButton(ns("reload"), "Reload Data", class="btn-primary"),
     hr(),
     fluidRow(
-      column(6, 
-             withLoader(DTOutput(ns("geneDisease")))
-      ),
-      column(6,
-             fluidRow(
-               column(12, plotlyOutput(ns("plot1"), height = "40vh"))
-             ),
-             fluidRow(
-               column(12, plotlyOutput(ns("plot2"), height = "40vh"))
-             )
-      )
+      column(12, uiOutput(ns("measurements_plots")))
+      # column(6, 
+      #        withLoader(DTOutput(ns("geneDisease")))
+      # ),
+      # column(6,
+      #        fluidRow(
+      #          column(12, plotlyOutput(ns("plot1"), height = "40vh"))
+      #        ),
+      #        fluidRow(
+      #          column(12, plotlyOutput(ns("plot2"), height = "40vh"))
+      #        )
+      # )
     )
   )
 }
 
 measurementsServer <- function(id, geneId, diseaseId){
   moduleServer(id, function(input, output, session){
+    
+    ns <- session$ns
     
     ### Query
     measurements <- reactive({
@@ -43,6 +46,30 @@ measurementsServer <- function(id, geneId, diseaseId){
     observe({
       rv$geneId <- geneId()
       rv$diseaseId <- diseaseId()
+    })
+    
+    ### Conditional rendering: if there is no geneId or diseaseId coming from
+    ### Biomarkers, Conditions or Summaries, then print table on full page, else 
+    ### print table and heatmap
+    output$measurements_plots <- renderUI({
+      if(!is.null(rv$geneId) || !is.null(rv$diseaseId)){
+        fluidRow(
+          column(8,
+                 withLoader(DTOutput(ns("geneDisease")))
+          ),
+          column(4,
+                 fluidRow(
+                   column(12, plotlyOutput(ns("plot1"), height = "40vh"))
+                 ),
+                 fluidRow(
+                   column(12, plotlyOutput(ns("plot2"), height = "40vh"))
+                 )
+                 
+          )
+        )
+      } else {
+        column(12, withLoader(DTOutput(ns("geneDisease"))))
+      }
     })
     
     ### Format data
