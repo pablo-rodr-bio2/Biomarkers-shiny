@@ -3,9 +3,20 @@ measurementsUI <- function(id){
   tagList(
     actionButton(ns("reload"), "Reload Data", class="btn-primary"),
     hr(),
-    withLoader(DTOutput(ns("geneDisease")))
+    fluidRow(
+      column(6, 
+             withLoader(DTOutput(ns("geneDisease")))
+      ),
+      column(6,
+             fluidRow(
+               column(12, plotlyOutput(ns("plot1"), height = "40vh"))
+             ),
+             fluidRow(
+               column(12, plotlyOutput(ns("plot2"), height = "40vh"))
+             )
+      )
+    )
   )
-  
 }
 
 measurementsServer <- function(id, geneId, diseaseId){
@@ -91,7 +102,50 @@ measurementsServer <- function(id, geneId, diseaseId){
       } else return(NULL)
     })
     
-    ## reset button
+    ### Plot
+    dataPlot <- reactive({
+      data <- data() %>% filter(`Biomarker Type` != "biomarker") %>%  dplyr::select(geneid,`Biomarker Type`) %>% 
+        unique()  %>% 
+        group_by(`Biomarker Type` ) %>% 
+        dplyr::summarise(n = n_distinct(geneid)) 
+      
+      data$`Biomarker Type` <- gsub("_", " ",data$`Biomarker Type`)
+      Ntotal <- data() %>%  select(geneid) %>%   unique() 
+      
+      data$percent <- round(data$n/length(Ntotal$geneid)*100, digits = 2)
+      data <- data[ order(-data$percent),]
+      data$`Biomarker Type` <- factor(data$`Biomarker Type`, levels = data$`Biomarker Type`)
+      data
+    })
+    
+    output$plot1 <- renderPlotly({
+      p <- ggplot(dataPlot(), aes(`Biomarker Type`, percent, fill = `Biomarker Type`)) +
+        geom_col() + theme_bw() + xlab("Biomarker Type") +theme(legend.position="none")
+      plotly::ggplotly(p)
+      
+    })
+    
+    output$plot2 <- renderPlotly({
+      p<- ggdotchart(dataPlot(), x = "Biomarker Type", y = "percent",
+                     color = "Biomarker Type",                                # Color by groups
+                     #   palette = c("#00AFBB", "#E7B800", "#FC4E07"), # Custom color palette
+                     sorting = "ascending",                        # Sort value in descending order
+                     add = "segments",                             # Add segments from y = 0 to dots
+                     rotate = TRUE,                                # Rotate vertically
+                     group = "Biomarker Type",                                # Order by groups
+                     dot.size = 10,                                 # Large dot size
+                     label = dataPlot()$n,                        # Add mpg values as dot labels
+                     font.label = list(color = "white", size = 8,
+                                       vjust = 0.5),               # Adjust label parameters
+                     ggtheme = theme_pubr()                        # ggplot2 theme
+      ) +theme(legend.position="none")
+
+      plotly::ggplotly(p)
+    })
+    
+    
+    
+    ### Reset button
     observeEvent(input$reload, {
       rv$geneId <- NULL
       rv$diseaseId <- NULL

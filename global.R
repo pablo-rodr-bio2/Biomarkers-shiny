@@ -9,6 +9,7 @@ library(ggplot2)
 library(plotly)
 library(ggrepel)
 library(rvest)
+library(ggpubr)
 
 pool <- dbPool(
   drv = MariaDB(),
