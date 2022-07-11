@@ -19,12 +19,17 @@ conditionServer <- function(id){
       diseases() %>%
             rename("Semantic Type" = sty,
                    "Num. Biomarkers" = nbiomarkers,
-                   "year initial" = year_initial, "year final" = year_final,
+                   "year initial CT" = year_initial_ct,
+                   "year final CT" = year_final_ct,
                    "Num. Clin.Trials" =  nclinicaltrials,
-                   "Num. Pmids" = npmids) %>%
+                   "Num. Pmids" = npmids, 
+                   "year initial PMID" = year_initial_pmid, 
+                   "year final PMID" = year_final_pmid)  %>%
             select(Condition, "Semantic Type",  "Num. Biomarkers" ,
-                   `Num. Clin.Trials`,   `Num. Pmids`,
-                   `year initial`, `year final`) %>%  arrange(desc(`Num. Clin.Trials`) )
+                   `Num. Clin.Trials`,   
+                   `year initial CT`, `year final CT`, `Num. Pmids`, 
+                   `year initial PMID`, `year final PMID`) %>%
+        arrange(desc(`Num. Clin.Trials`) )
     })
     
     ### Produce table

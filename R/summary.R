@@ -35,12 +35,15 @@ summaryServer <- function(id, geneId, diseaseId) {
         filter( if( !is.null(rv$geneId) ) geneid == rv$geneId else TRUE ) %>%
         filter( if( !is.null(rv$diseaseId) ) diseaseid == rv$diseaseId else TRUE ) %>%
         rename( "Gene" = symbol, "Condition" = name,
-                "year initial" = year_initial, "year final" = year_final,
+                "year initial CT" = year_initial_ct,
+                "year final CT" = year_final_ct,
                 "Num. Clin.Trials" =  nclinicaltrials,
-                "Num. Pmids" = npmids)  %>%
-        arrange(desc(`Num. Clin.Trials`) ) %>%
-        mutate(Fisher = formatC(Fisher, format="e", digits=2, zero.print = TRUE)) %>% 
-        relocate(c(`Num. Clin.Trials`, `Num. Pmids`, `year initial`, `year final`), .after = OddsRatio)
+                "Num. Pmids" = npmids, 
+                "year initial PMID" = year_initial_pmid, 
+                "year final PMID" = year_final_pmid)  %>%
+        arrange(desc(`Num. Pmids`) )# %>%
+        #mutate(Fisher = formatC(Fisher, format="e", digits=2, zero.print = TRUE)) %>% 
+        #relocate(c(`Num. Clin.Trials`, `Num. Pmids`, `year initial`, `year final`), .after = OddsRatio)
     })
     
     ### Produce table
@@ -64,7 +67,7 @@ summaryServer <- function(id, geneId, diseaseId) {
         options = list(dom = 'ltipr',
                        columnDefs = list(
                          list(className = 'dt-center', targets ="_all"),
-                         list(visible = FALSE, targets=c(1,2,10))
+                         list(visible = FALSE, targets=c(0,1,10))
                        )
         ),
         selection = list(mode = 'single', target = 'cell'),

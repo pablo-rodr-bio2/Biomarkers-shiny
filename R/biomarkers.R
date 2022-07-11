@@ -24,14 +24,17 @@ biomarkersServer <- function(id) {
                 "DPI" = dpi, 
                 "DSI" = dsi, 
                 "pLI"=pli,
-                "year initial" = year_initial,
-                "year final" = year_final,
+                "year initial CT" = year_initial_ct,
+                "year final CT" = year_final_ct,
                 "Num. Clin.Trials" =  nclinicaltrials,
                 "Num. Diseases" = ndiseases,
-                "Num. Pmids" = npmids)  %>%
+                "Num. Pmids" = npmids, 
+                "year initial PMID" = year_initial_pmid, 
+                "year final PMID" = year_final_pmid)  %>%
         select(Gene, description, `type of gene`, DSI, DPI, pLI,`protein class`,
-               `Num. Diseases`, `Num. Clin.Trials`, `Num. Pmids`,
-               `year initial`, `year final`) %>%
+               `Num. Diseases`, `Num. Clin.Trials`, 
+               `year initial CT`, `year final CT`, `Num. Pmids`, 
+               `year initial PMID`, `year final PMID`) %>%
         arrange(desc(`Num. Clin.Trials`))
     )
     

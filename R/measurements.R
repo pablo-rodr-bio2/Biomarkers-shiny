@@ -16,14 +16,12 @@ measurementsServer <- function(id, geneId, diseaseId){
     
     ### Query
     measurements <- reactive({
-      query <- "select gd.*, g.symbol, d.name, s.year
+      query <- "select gd.*, g.symbol, d.name 
             from gene_disease as gd
             left join genes as g
             on gd.geneid = g.geneid
             left join diseases as d
-            on gd.diseaseid = d.diseaseid
-            left join studies as s
-            on gd.nctid = s.nctid"
+            on gd.diseaseid = d.diseaseid  "
       pool %>%
         dbGetQuery(query) %>%
         collect() 
@@ -50,8 +48,8 @@ measurementsServer <- function(id, geneId, diseaseId){
       relocate(name, .after=symbol) %>%
       rename("Gene" = symbol, "Condition" = name,
              "NCT ID" = nctid, "Measurement" = sentence,
-             "Num. Pmids" = npmids,
-             "Biomarker Type" = bmtype ) %>%  arrange(desc(`Num. Pmids`) )
+            # "Num. Pmids" = npmids,
+             "Biomarker Type" = bmtype ) %>%  arrange(desc(`year`) )
     })
 
     ### Produce table
@@ -73,11 +71,11 @@ measurementsServer <- function(id, geneId, diseaseId){
         options = list(dom = 'ltipr',
                        pageLength = 5,
                        columnDefs = list(list(className = 'dt-center', targets ="_all"),
-                                         list(visible = FALSE, targets = c(3,4,5,8)))),
+                                         list(visible = FALSE, targets = c(3,4,7,8,10,13,15)))),
         rownames = FALSE,
         selection = list(mode = 'single', target = 'cell'),
         callback = JS(js)
-      ) %>% formatStyle("Num. Pmids", backgroundColor = "yellow")
+      ) #%>% formatStyle("Num. Pmids", backgroundColor = "yellow")
     )
     
     measurementData <- eventReactive(req(length(input$geneDisease_cell_clicked) > 0), {

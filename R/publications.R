@@ -30,10 +30,9 @@ publicationServer <- function(id, geneId, diseaseId){
       publications() %>% 
         filter( if( !is.null(rv$geneId) ) geneid == rv$geneId else TRUE ) %>%
         filter( if( !is.null(rv$diseaseId) ) diseaseid == rv$diseaseId else TRUE ) %>%
-        mutate(nctid =   createLink_NCIT(nctid),
-               pmid =   createLink_PMID(pmid)) %>%
+        mutate(    pmid =   createLink_PMID(pmid)) %>%
         select(-id) %>%
-        rename("NCT ID" = nctid) %>%
+        rename("PMID" = pmid) %>%
         arrange(desc(year))
     })
     
@@ -41,7 +40,8 @@ publicationServer <- function(id, geneId, diseaseId){
     output$publications <- renderDataTable(
       data(), filter = "top",
       options = list(dom = 'ltipr',
-                     columnDefs = list(list(className = 'dt-center', targets ="_all"))),
+                     columnDefs = list(list(className = 'dt-center', targets ="_all"),
+                                       list(visible = FALSE, targets = c(1,3,5,11)))),
       selection = list(mode = 'single', target = 'cell'),
       escape = FALSE,
       rownames = FALSE
