@@ -13,9 +13,9 @@ library(ggpubr)
 
 pool <- dbPool(
   drv = MariaDB(),
-  host = "localhost",
+  host = "david.prib.upf.edu",
   username = "psebastian",
-  password = "",
+  password = "correguepardo",
   dbname = "biomarkers_2022",
   port = 3306
 )
