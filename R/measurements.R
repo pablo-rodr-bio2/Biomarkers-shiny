@@ -16,12 +16,7 @@ measurementsServer <- function(id, geneId, diseaseId){
     
     ### Query
     measurements <- reactive({
-      query <- "select gd.*, g.symbol, d.name 
-            from gene_disease as gd
-            left join genes as g
-            on gd.geneid = g.geneid
-            left join diseases as d
-            on gd.diseaseid = d.diseaseid  "
+      query <- "select * from gene_disease "
       pool %>%
         dbGetQuery(query) %>%
         collect() 
