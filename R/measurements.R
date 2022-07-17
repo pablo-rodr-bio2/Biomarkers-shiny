@@ -16,12 +16,8 @@ measurementsServer <- function(id, geneId, diseaseId){
     
     ### Query
     measurements <- reactive({
-      query <- "select gd.*, g.symbol, d.name 
-            from gene_disease as gd
-            left join genes as g
-            on gd.geneid = g.geneid
-            left join diseases as d
-            on gd.diseaseid = d.diseaseid  "
+      query <- "select  * 
+            from gene_disease   "
       pool %>%
         dbGetQuery(query) %>%
         collect() 
@@ -46,8 +42,10 @@ measurementsServer <- function(id, geneId, diseaseId){
                name = createLink_Name(diseaseid, name)) %>%
       relocate(symbol, .after=nctid) %>%
       relocate(name, .after=symbol) %>%
+        relocate(brief_title, .after=bmtype) %>%
       rename("Gene" = symbol, "Condition" = name,
-             "NCT ID" = nctid, "Measurement" = sentence,
+             "NCT ID" = nctid, "Statement" = sentenceHtml,
+             "Study Title" = brief_title ,
             # "Num. Pmids" = npmids,
              "Biomarker Type" = bmtype ) %>%  arrange(desc(`year`) )
     })
@@ -71,7 +69,8 @@ measurementsServer <- function(id, geneId, diseaseId){
         options = list(dom = 'ltipr',
                        pageLength = 5,
                        columnDefs = list(list(className = 'dt-center', targets ="_all"),
-                                         list(visible = FALSE, targets = c(3,4,7,8,10,13,15)))),
+                                         list(visible = FALSE, targets = c(3,4,5,9,11,13,15))
+                                         )),
         rownames = FALSE,
         selection = list(mode = 'single', target = 'cell'),
         callback = JS(js)

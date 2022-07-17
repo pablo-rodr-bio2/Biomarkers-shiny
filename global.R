@@ -1,5 +1,5 @@
 library(shiny)
-library(RMySQL)
+library(RMariaDB)
 library(DT)
 library(shinycustomloader)
 library(dplyr)
@@ -12,10 +12,10 @@ library(rvest)
 library(ggpubr)
 
 pool <- dbPool(
-  drv = MySQL(),
-  host = "david.prib.upf.edu",
+  drv = MariaDB(),
+  host = "localhost",
   username = "janet",
-  password = "x2+y2=1",
+  password = "virgo123",
   dbname = "biomarkers_all_2022",
   port = 3306
 )
