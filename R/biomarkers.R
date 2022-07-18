@@ -18,7 +18,8 @@ biomarkersServer <- function(id) {
 
     ### Format data
     data <- reactive(
-      genes() %>% 
+      genes() %>% mutate(dsi =round(dsi/100, 2), dpi =round(dpi, 2),
+                         pli = ifelse(pli> 0.01, round(pli, 2), formatC(pli, format = "e", digits = 1))) %>%
         rename( "type of gene" = type_of_gene,
                 "protein class" = PROTEIN_CLASS_NAMES,
                 "DPI" = dpi, 

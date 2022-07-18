@@ -67,7 +67,7 @@ measurementsServer <- function(id, geneId, diseaseId){
         escape = FALSE,
         filter = "top",
         options = list(dom = 'ltipr',
-                       pageLength = 5,
+                       pageLength = 10,
                        columnDefs = list(list(className = 'dt-center', targets ="_all"),
                                          list(visible = FALSE, targets = c(3,4,5,9,11,13,15))
                                          )),
