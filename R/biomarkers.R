@@ -18,7 +18,8 @@ biomarkersServer <- function(id) {
 
     ### Format data
     data <- reactive(
-      genes() %>% mutate(dsi =round(dsi/100, 2), dpi =round(dpi, 2),
+      genes() %>% mutate(dsi =round(dsi, 2), dpi =round(dpi/100, 2),
+                         entropy = round(entropy, 2),
                          pli = ifelse(pli> 0.01, round(pli, 2), formatC(pli, format = "e", digits = 1))) %>%
         rename( "type of gene" = type_of_gene,
                 "protein class" = PROTEIN_CLASS_NAMES,
@@ -31,11 +32,12 @@ biomarkersServer <- function(id) {
                 "Num. Diseases" = ndiseases,
                 "Num. Pmids" = npmids, 
                 "year initial PMID" = year_initial_pmid, 
-                "year final PMID" = year_final_pmid)  %>%
+                "year final PMID" = year_final_pmid,
+                "therapeutic class" = class)  %>%
         select(Gene, description, `type of gene`, DSI, DPI, pLI,`protein class`,
                `Num. Diseases`, `Num. Clin.Trials`, 
                `year initial CT`, `year final CT`, `Num. Pmids`, 
-               `year initial PMID`, `year final PMID`) %>%
+               `year initial PMID`, `year final PMID`, entropy, `therapeutic class`) %>%
         arrange(desc(`Num. Clin.Trials`))
     )
     
@@ -62,7 +64,7 @@ biomarkersServer <- function(id) {
         escape = FALSE,
         selection = list(mode = 'single', target = 'cell'),
         callback = JS(js)
-      ) %>% formatStyle("Gene", backgroundColor = "green") %>% 
+      ) %>% #formatStyle("Gene", backgroundColor = "green") %>% 
         formatStyle("Num. Diseases", backgroundColor = "green") %>% 
         formatStyle("Num. Clin.Trials", backgroundColor = "purple") %>% 
         formatStyle("Num. Pmids", backgroundColor = "yellow")

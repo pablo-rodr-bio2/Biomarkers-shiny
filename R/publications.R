@@ -30,7 +30,9 @@ publicationServer <- function(id, geneId, diseaseId){
       publications() %>% 
         filter( if( !is.null(rv$geneId) ) geneid == rv$geneId else TRUE ) %>%
         filter( if( !is.null(rv$diseaseId) ) diseaseid == rv$diseaseId else TRUE ) %>%
-        mutate(    pmid =   createLink_PMID(pmid)) %>%
+        mutate(    pmid =   createLink_PMID(pmid), 
+                   symbol = createLink_Symbol(geneid, symbol),
+                   name = createLink_Name(diseaseid, name)) %>%
 #        select(-id) %>%
         select(pmid, symbol,name,bmtype, sentenceHtml, title, journal, year) %>%
         

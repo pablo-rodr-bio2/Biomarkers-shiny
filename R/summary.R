@@ -34,6 +34,8 @@ summaryServer <- function(id, geneId, diseaseId) {
       summaries() %>%
         filter( if( !is.null(rv$geneId) ) geneid == rv$geneId else TRUE ) %>%
         filter( if( !is.null(rv$diseaseId) ) diseaseid == rv$diseaseId else TRUE ) %>%
+        mutate(symbol = createLink_Symbol(geneid, symbol),
+               name = createLink_Name(diseaseid, name)) %>%
         rename( "Gene" = symbol, "Condition" = name,
                 "year initial CT" = year_initial_ct,
                 "year final CT" = year_final_ct,

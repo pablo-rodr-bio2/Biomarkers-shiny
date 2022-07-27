@@ -9,10 +9,10 @@ library(rvest)
 
 pool <- dbPool(
   drv = MariaDB(),
-  #host = "localhost",
-  host = "david.prib.upf.edu",
+  host = "localhost",
+  #host = "david.prib.upf.edu",
   username = "janet",
-  password = "x2+y2=1",
+  password = "virgo123",
   dbname = "biomarkers_all_2022",
   port = 3306
 )

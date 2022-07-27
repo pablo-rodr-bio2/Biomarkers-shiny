@@ -51,7 +51,7 @@ conditionServer <- function(id){
         rownames = FALSE,
         escape = FALSE,
         callback = JS(js)
-      ) %>% formatStyle("Condition", backgroundColor = "green") %>% 
+      ) %>% #formatStyle("Condition", backgroundColor = "green") %>% 
         formatStyle("Num. Biomarkers", backgroundColor = "green") %>% 
         formatStyle("Num. Clin.Trials", backgroundColor = "purple") %>% 
         formatStyle("Num. Pmids", backgroundColor = "yellow")
