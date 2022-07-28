@@ -9,13 +9,14 @@ library(rvest)
 
 pool <- dbPool(
   drv = MariaDB(),
-  host = "localhost",
-  #host = "david.prib.upf.edu",
-  username = "janet",
-  password = "virgo123",
+  # host = "localhost",
+  host = "david.prib.upf.edu",
+  username = "psebastian",
+  password = "correguepardo",
   dbname = "biomarkers_all_2022",
   port = 3306
 )
+
 onStop(function() {
   poolClose(pool)
 })
