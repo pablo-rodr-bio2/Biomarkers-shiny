@@ -1,6 +1,6 @@
 navbarPage(
   id = "navbarPage",
-  title = actionLink("header_title","CLINICAL TRIALS BIOMARKERS", icon = icon("home")),
+  title = actionLink("header_title","CLINICAL BIOMARKERS", icon = icon("home")),
   header = tags$head(
     tags$style(type = "text/css", "body {padding-top: 70px;}"), ## doesn't work in custom-css.css
     tags$link(rel = "stylesheet", type = "text/css", href = "custom-css.css"),
@@ -8,6 +8,7 @@ navbarPage(
               href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
   ),
   nav_spacer(),
+
   tabPanel("About", value = "about", htmlOutput("homeWeb")),
   tabPanel("Biomarkers", value = "genes", biomarkersUI("genes1")),
   tabPanel("Conditions", value = "diseases", conditionsUI("diseases1")),

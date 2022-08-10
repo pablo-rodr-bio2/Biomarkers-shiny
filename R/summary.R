@@ -77,8 +77,8 @@ summaryServer <- function(id, geneId, diseaseId) {
         rownames = FALSE,
         callback = JS(js)
         ) %>%
-        formatStyle("Num. Clin.Trials", backgroundColor = "purple") %>% 
-        formatStyle("Num. Pmids", backgroundColor = "yellow")
+        formatStyle("Num. Clin.Trials", backgroundColor = "#7570B3") %>% 
+        formatStyle("Num. Pmids", backgroundColor = "#D95F01")
     )
     
     ## data to be returned (ids for other tables)

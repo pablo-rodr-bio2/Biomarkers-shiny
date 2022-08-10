@@ -65,9 +65,12 @@ biomarkersServer <- function(id) {
         selection = list(mode = 'single', target = 'cell'),
         callback = JS(js)
       ) %>% #formatStyle("Gene", backgroundColor = "green") %>% 
-        formatStyle("Num. Diseases", backgroundColor = "green") %>% 
-        formatStyle("Num. Clin.Trials", backgroundColor = "purple") %>% 
-        formatStyle("Num. Pmids", backgroundColor = "yellow")
+        # formatStyle("Num. Biomarkers", backgroundColor = "#75a085") %>% 
+        # formatStyle("Num. Clin.Trials", backgroundColor = "#7570B3") %>% 
+        # formatStyle("Num. Pmids", backgroundColor = "#D95F01")
+        formatStyle("Num. Diseases", backgroundColor = "#75a085") %>% 
+        formatStyle("Num. Clin.Trials", backgroundColor = "#7570B3") %>% 
+        formatStyle("Num. Pmids", backgroundColor = "#D95F01")
       })
     
     

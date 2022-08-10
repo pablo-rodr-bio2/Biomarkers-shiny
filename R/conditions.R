@@ -52,9 +52,9 @@ conditionServer <- function(id){
         escape = FALSE,
         callback = JS(js)
       ) %>% #formatStyle("Condition", backgroundColor = "green") %>% 
-        formatStyle("Num. Biomarkers", backgroundColor = "green") %>% 
-        formatStyle("Num. Clin.Trials", backgroundColor = "purple") %>% 
-        formatStyle("Num. Pmids", backgroundColor = "yellow")
+        formatStyle("Num. Biomarkers", backgroundColor = "#75a085") %>% 
+        formatStyle("Num. Clin.Trials", backgroundColor = "#7570B3") %>% 
+        formatStyle("Num. Pmids", backgroundColor = "#D95F01")
     )
     
     diseaseData <- eventReactive(req(length(input$diseases_cell_clicked) > 0), {
