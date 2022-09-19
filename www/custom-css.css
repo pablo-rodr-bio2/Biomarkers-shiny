@@ -25,11 +25,11 @@ table.dataTable tr.active td, table.dataTable td.active {
   background-color: #DAA520 !important;
 }
 
-.navbar-nav > li > a[data-value='publications'] {color: black !important; background-color: #7570B3; }
+.navbar-nav > li > a[data-value='publications'] {color: black !important; background-color:  #D95F01; }
 
 .navbar-nav > li > a[data-value='gene_disease_summary'] {color: black !important; background-color: #75a085; }
 
-.navbar-nav > li > a[data-value='gene_disease'] {color: black !important; background-color: #D95F01; }
+.navbar-nav > li > a[data-value='gene_disease'] {color: black !important; background-color: #7570B3; }
 
 
 #header_title {
